@@ -6,7 +6,8 @@ OpenShift manifests for one party deployment: UI, Quarkus engine, and vLLM servi
 
 ```bash
 oc new-project questshift
-# Hugging Face token is required for ibm-granite/granite-3.1-8b-instruct
+# Hugging Face token is required for ibm-granite/granite-3.1-8b-instruct.
+# Create the secret on the cluster. Do not commit the token or a Secret YAML.
 oc create secret generic questshift-hf --from-literal=token=YOUR_HF_TOKEN
 oc apply -k k8s/
 ```

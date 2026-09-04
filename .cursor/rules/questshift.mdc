@@ -1,0 +1,19 @@
+---
+description: QuestShift always-on map for the gitops repo
+alwaysApply: true
+---
+
+# QuestShift (gitops)
+
+Read this repo's `AGENTS.md`, then workflows.
+
+- Local AGENTS: `/Users/dtorresf/Documents/GitHub/na-fsi-services/questshift/questshift-gitops/AGENTS.md`
+  GitHub: https://github.com/NA-FSI-Services/questshift-gitops/blob/main/AGENTS.md
+- Docs AGENTS: https://github.com/NA-FSI-Services/questshift/blob/main/AGENTS.md
+  Local: `/Users/dtorresf/Documents/GitHub/na-fsi-services/questshift/questshift/AGENTS.md`
+- Workflows: https://github.com/NA-FSI-Services/questshift/blob/main/docs/WORKFLOWS.md
+  Local: `/Users/dtorresf/Documents/GitHub/na-fsi-services/questshift/questshift/docs/WORKFLOWS.md`
+- Essentials: https://github.com/NA-FSI-Services/questshift/blob/main/docs/ARCHITECTURE-ESSENTIALS.md
+  Local: `/Users/dtorresf/Documents/GitHub/na-fsi-services/questshift/questshift/docs/ARCHITECTURE-ESSENTIALS.md`
+
+One OpenShift project is one party. vLLM + Granite 3.1 8B Instruct + `nvidia.com/gpu: 1`. No Ollama, no native image, no extra Routes, no command-runner pod. Never commit HF tokens; create `questshift-hf` with `oc create secret`.

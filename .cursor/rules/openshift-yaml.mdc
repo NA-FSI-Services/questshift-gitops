@@ -1,0 +1,14 @@
+---
+description: OpenShift / kustomize conventions for questshift-gitops
+globs: "**/*.{yaml,yml}"
+alwaysApply: false
+---
+
+# OpenShift YAML
+
+- Apply with `oc apply -k k8s/`. Namespace `questshift`. One party; do not add a session router.
+- `llm-deployment.yaml`: image `vllm/vllm-openai`, model `ibm-granite/granite-3.1-8b-instruct`, `nvidia.com/gpu: "1"`. No Ollama container.
+- Engine Deployment is JVM. Do not switch to a native image. Mount campaigns ConfigMap read-only.
+- Route targets the UI Service only; nginx already proxies `/api/` and `/ws/`.
+- Keep Hugging Face secret name `questshift-hf`. Create it with `oc create secret`, never a committed `Secret` YAML. Git may only `secretKeyRef` name `questshift-hf` key `token`. No `stringData`, no real tokens, no kubeconfigs.
+- Campaign ConfigMap generator file must stay in sync with `questshift-campaigns`.

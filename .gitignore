@@ -1,0 +1,14 @@
+# Local secrets — never commit Hugging Face tokens, kubeconfigs, or Secret YAML with real data
+.env
+.env.*
+*.pem
+kubeconfig
+kubeconfig.*
+secrets.yaml
+secret.yaml
+*-secret.yaml
+hf-token*
+.hf_token
+
+.DS_Store
+*.swp
