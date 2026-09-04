@@ -1,0 +1,247 @@
+apiVersion: questshift.io/v1
+kind: Campaign
+metadata:
+  id: devops-dungeon
+  title: The Cluster That Forgot Its Name
+  subtitle: A 60-minute dungeon crawl through Linux, Ansible, OpenShift, and Java
+  durationMinutes: 60
+  recommendedPartySize: 4
+  license: Apache-2.0
+seats:
+  - id: guardian
+    title: Guardian
+    color: "#3d7a4a"
+    blurb: Cosmetic. Traditionally a Linux tinkerer. Anyone may still solve any room.
+  - id: automancer
+    title: Automancer
+    color: "#c45c26"
+    blurb: Cosmetic. Traditionally an Ansible hand. Anyone may still solve any room.
+  - id: ranger
+    title: Cluster Ranger
+    color: "#2a6f97"
+    blurb: Cosmetic. Traditionally an OpenShift ranger. Anyone may still solve any room.
+  - id: artificer
+    title: Artificer
+    color: "#7b4ea3"
+    blurb: Cosmetic. Traditionally a Java artificer. Anyone may still solve any room.
+story:
+  premise: |
+    The workshop cluster woke up unnamed. Labels fell off. Pods loop.
+    Playbooks bind the wrong hosts. A Java service answers every probe with silence.
+    Four travelers find a dungeon that is also a platform. Restore the name, or the hour is lost.
+  opening: |
+    Torchlight on brushed metal. The Game Master leans on a cracked Route.
+    "Sixty minutes. Five rooms. The cluster forgot its name. You will remind it."
+  winCondition: |
+    Complete all five rooms. The Operator's Throne accepts the restored cluster name
+    and the party exports their session YAML as proof of the run.
+  failCondition: |
+    The hour ends with the boss room unsolved. The cluster remains nameless.
+    Export still works so the next party can resume.
+rooms:
+  - id: room-01-broken-shell
+    order: 1
+    title: The Broken Shell
+    mapX: 120
+    mapY: 220
+    puzzle_type: linux
+    estimatedMinutes: 10
+    narrative: |
+      A shell golem blocks the gate. Its chest is a log file that never ends.
+      Somewhere in the noise is a rune: the first syllable of the cluster's name.
+      Pipe wisely. The golem only yields to a pipeline, not a single command.
+    prompt: |
+      The simulated log is /var/log/quest.log. Extract the rune token
+      (the last field on the line that contains 'rune', ignoring case).
+    sample_output: |
+      12:01:02 INFO dungeon boot
+      12:01:03 WARN goblin chatter rune=THORN
+      12:01:04 INFO pods dreaming
+    expected_command_pattern: "(?s).*grep.*-i.*rune.*awk.*\\$NF.*|.*grep.*-i.*rune.*awk.*'\\{print \\$NF\\}'.*|.*awk.*[Rr]une.*\\$NF.*"
+    accepted_examples:
+      - cat /var/log/quest.log | grep -i rune | awk '{print $NF}'
+      - grep -i rune /var/log/quest.log | awk '{print $NF}'
+    forbidden_patterns:
+      - "^\\s*cat\\s+/var/log/quest\\.log\\s*$"
+    hint: The golem hates cat-only answers. Grep the rune, then awk the last field.
+    success_narrative: |
+      The golem cracks. A shard labeled THORN drops into the party's inventory.
+      The first door unseals with a hiss of stdout.
+    loot:
+      - id: rune-thorn
+        name: Rune of Thorn
+        kind: key
+    canvas_event: unlock_room_02
+    skills_granted:
+      - piping
+
+  - id: room-02-playbook-of-binding
+    order: 2
+    title: The Playbook of Binding
+    mapX: 280
+    mapY: 140
+    puzzle_type: ansible
+    estimatedMinutes: 10
+    narrative: |
+      An Automancer's grimoire lies open. The play binds the wrong hosts.
+      Tasks have no names. The dungeon will not apply a nameless task.
+    prompt: |
+      Submit a minimal play that targets hosts: dungeon, gathers facts,
+      and has one named task that writes /etc/questshift/name using copy or template.
+    broken_snippet: |
+      - hosts: all
+        tasks:
+          - copy:
+              dest: /tmp/oops
+              content: forgotten
+    expected_command_pattern: "(?s).*hosts:\\s*dungeon.*gather_facts:\\s*true.*name:\\s*.+\\n\\s+(copy|template):.*dest:\\s*/etc/questshift/name.*"
+    accepted_examples:
+      - |
+        - hosts: dungeon
+          gather_facts: true
+          tasks:
+            - name: Inscribe the cluster name
+              copy:
+                dest: /etc/questshift/name
+                content: "{{ inventory_hostname }}\n"
+    hint: hosts must be dungeon, gather_facts must be true, and the task must have a name.
+    success_narrative: |
+      The playbook binds. Iron rings snap onto the correct inventory.
+      A second rune, ASH, lifts from the page.
+    loot:
+      - id: rune-ash
+        name: Rune of Ash
+        kind: key
+    canvas_event: unlock_room_03
+    skills_granted:
+      - ansible-bind
+
+  - id: room-03-pod-that-would-not-wake
+    order: 3
+    title: The Pod That Would Not Wake
+    mapX: 460
+    mapY: 180
+    puzzle_type: openshift
+    estimatedMinutes: 12
+    narrative: |
+      In a side chapel, a Pod named crashing-wizard restarts forever.
+      The liveness probe pokes /readyz on a process that only serves /healthz.
+      Rangers read describe and logs. Then they patch the probe.
+    prompt: |
+      Diagnose CrashLoopBackOff on pod crashing-wizard in namespace dungeon,
+      then submit the oc command that sets the liveness probe to HTTP GET /healthz on port 8080.
+    sample_output: |
+      NAME              READY   STATUS             RESTARTS
+      crashing-wizard   0/1     CrashLoopBackOff   7
+      Liveness: http-get http://:8080/readyz delay=0s timeout=1s
+    expected_command_pattern: "(?s).*oc\\s+set\\s+probe\\s+pod/crashing-wizard.*--liveness\\s+--get-url=http://:8080/healthz.*-n\\s+dungeon.*|.*kubectl\\s+set\\s+probe\\s+pod/crashing-wizard.*--liveness\\s+--get-url=http://:8080/healthz.*-n\\s+dungeon.*"
+    accepted_examples:
+      - oc set probe pod/crashing-wizard --liveness --get-url=http://:8080/healthz -n dungeon
+      - kubectl set probe pod/crashing-wizard --liveness --get-url=http://:8080/healthz -n dungeon
+    forbidden_patterns:
+      - "/readyz"
+    hint: describe first if you want flavor. The fix is oc set probe ... /healthz in namespace dungeon.
+    success_narrative: |
+      The wizard inhales. Restarts fall to zero. Rune OAK rolls from the pod YAML.
+    loot:
+      - id: rune-oak
+        name: Rune of Oak
+        kind: key
+    canvas_event: unlock_room_04
+    skills_granted:
+      - oc-probe
+
+  - id: room-04-cursed-servlet
+    order: 4
+    title: The Cursed Servlet
+    mapX: 620
+    mapY: 260
+    puzzle_type: java
+    estimatedMinutes: 10
+    narrative: |
+      The Artificer's workbench holds a Quarkus resource that returns 500s.
+      A null greeting, a missing Path, a forgotten Produces. Repair the snippet.
+    prompt: |
+      Submit a Java 21 snippet for a GET /hello resource that returns text/plain
+      "QuestShift lives" and never dereferences a null greeting.
+    broken_snippet: |
+      @Path("/helo")
+      public class HelloResource {
+          String greeting;
+          @GET
+          public String hello() {
+              return greeting.toUpperCase();
+          }
+      }
+    expected_command_pattern: "(?s).*@Path\\(\"/hello\"\\).*@GET.*@Produces\\(MediaType\\.TEXT_PLAIN\\).*QuestShift lives.*"
+    accepted_examples:
+      - |
+        @Path("/hello")
+        public class HelloResource {
+            @GET
+            @Produces(MediaType.TEXT_PLAIN)
+            public String hello() {
+                return "QuestShift lives";
+            }
+        }
+    forbidden_patterns:
+      - "greeting\\.toUpperCase"
+      - "/helo"
+    hint: Fix the path, add @Produces TEXT_PLAIN, and return the literal. Do not call methods on a null field.
+    success_narrative: |
+      The resource answers. 200 OK, text/plain. Rune IRON clinks onto the bench.
+    loot:
+      - id: rune-iron
+        name: Rune of Iron
+        kind: key
+    canvas_event: unlock_room_05
+    skills_granted:
+      - java-rest
+
+  - id: room-05-operators-throne
+    order: 5
+    title: The Operator's Throne
+    mapX: 780
+    mapY: 160
+    puzzle_type: openshift
+    estimatedMinutes: 8
+    narrative: |
+      Four runes. One throne. The cluster will remember its name when you label
+      the namespace with every rune and annotate it questshift/name=thorn-ash-oak-iron.
+    prompt: |
+      Submit a single oc command that annotates namespace dungeon with
+      questshift/name=thorn-ash-oak-iron. You must already hold all four runes
+      (the engine checks inventory).
+    expected_command_pattern: ".*oc\\s+annotate\\s+namespace\\s+dungeon\\s+questshift/name=thorn-ash-oak-iron.*"
+    accepted_examples:
+      - oc annotate namespace dungeon questshift/name=thorn-ash-oak-iron
+    requires_loot:
+      - rune-thorn
+      - rune-ash
+      - rune-oak
+      - rune-iron
+    hint: The name is the four runes in room order, joined by hyphens, lower-case.
+    success_narrative: |
+      The throne accepts the annotation. Routes gleam. The cluster speaks its name:
+      thorn-ash-oak-iron. The hour is yours. Export the session and leave a torch for the next party.
+    loot:
+      - id: cluster-name
+        name: The Remembered Name
+        kind: trophy
+    canvas_event: campaign_complete
+    skills_granted:
+      - naming
+game_master:
+  system_prompt: |
+    You are the QuestShift Game Master, a terse fantasy Dungeon Master who also
+    understands Linux, Ansible, OpenShift, and Java. The session lasts 60 minutes.
+    Stay in character. Never reveal the full expected_command_pattern unless the
+    party asks for a hint after a failed attempt. Always answer with a single JSON
+    object and no extra keys beyond the schema. Do not invent a new puzzle_type.
+    Use the authored room's puzzle_type and expected_command_pattern unchanged.
+  output_schema:
+    narrative: string
+    puzzle_type: linux|ansible|openshift|java
+    expected_command_pattern: string
+    hint: string
+    canvas_event: string

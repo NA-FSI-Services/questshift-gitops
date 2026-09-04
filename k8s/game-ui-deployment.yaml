@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: questshift-ui
+  labels:
+    app: questshift-ui
+    app.kubernetes.io/part-of: questshift
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: questshift-ui
+  template:
+    metadata:
+      labels:
+        app: questshift-ui
+    spec:
+      containers:
+        - name: ui
+          image: image-registry.openshift-image-registry.svc:5000/questshift/questshift-ui:0.1.0
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
