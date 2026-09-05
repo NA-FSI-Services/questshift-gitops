@@ -1,0 +1,22 @@
+---
+- name: Render {{ template_name }}
+  template:
+    src: "{{ template_name }}.yaml.j2"
+    dest: "{{ playbook_dir }}/.work/{{ template_name }}.yaml"
+    mode: "0644"
+
+- name: Apply {{ template_name }} until the API accepts it
+  ansible.builtin.shell: |
+    set -euo pipefail
+    for _ in $(seq 1 30); do
+      if oc apply -f "{{ playbook_dir }}/.work/{{ template_name }}.yaml"; then
+        exit 0
+      fi
+      sleep 10
+    done
+    echo "timed out applying {{ template_name }}" >&2
+    exit 1
+  args:
+    executable: /bin/bash
+  register: apply_manifest
+  changed_when: "'created' in apply_manifest.stdout or 'configured' in apply_manifest.stdout"

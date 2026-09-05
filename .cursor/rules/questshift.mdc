@@ -13,7 +13,9 @@ Read this repo's `AGENTS.md`, then workflows.
   Local: `/Users/dtorresf/Documents/GitHub/na-fsi-services/questshift/questshift/AGENTS.md`
 - Workflows: https://github.com/NA-FSI-Services/questshift/blob/main/docs/WORKFLOWS.md
   Local: `/Users/dtorresf/Documents/GitHub/na-fsi-services/questshift/questshift/docs/WORKFLOWS.md`
+- Install: https://github.com/NA-FSI-Services/questshift/blob/main/docs/INSTALL.md
+  Local: `/Users/dtorresf/Documents/GitHub/na-fsi-services/questshift/questshift/docs/INSTALL.md`
 - Essentials: https://github.com/NA-FSI-Services/questshift/blob/main/docs/ARCHITECTURE-ESSENTIALS.md
   Local: `/Users/dtorresf/Documents/GitHub/na-fsi-services/questshift/questshift/docs/ARCHITECTURE-ESSENTIALS.md`
 
-One OpenShift project is one party. vLLM + Granite 3.1 8B Instruct + `nvidia.com/gpu: 1`. No Ollama, no native image, no extra Routes, no command-runner pod. Never commit HF tokens; create `questshift-hf` with `oc create secret`.
+One OpenShift project is one party. Install with `./install.sh`. vLLM + Granite 3.1 8B Instruct + `nvidia.com/gpu: 1`. No Ollama, no native image, no extra Routes, no command-runner pod. Never commit HF tokens; create `questshift-hf` with the installer / `oc create secret`.

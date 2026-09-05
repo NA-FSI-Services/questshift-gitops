@@ -1,0 +1,79 @@
+---
+- name: Probe the cluster
+  command: python3 "{{ probe_script }}"
+  register: probe_raw
+  changed_when: false
+
+- name: Parse probe JSON
+  set_fact:
+    cluster_probe: "{{ probe_raw.stdout | from_json }}"
+
+- name: Show probe summary
+  debug:
+    msg:
+      - "user={{ cluster_probe.user }} admin={{ cluster_probe.is_admin }}"
+      - "ocp={{ cluster_probe.ocp_version }} workers={{ cluster_probe.worker_count }}"
+      - "cpu_free_m={{ cluster_probe.cpu_free_millis }}/{{ cluster_probe.need_cpu_millis }} mem_free_mi={{ cluster_probe.memory_free_mi }}/{{ cluster_probe.need_memory_mi }}"
+      - "gpu_free={{ cluster_probe.gpu_free }}/{{ cluster_probe.need_gpu }} operators_missing={{ cluster_probe.operators_missing }}"
+      - "warnings={{ cluster_probe.warnings }}"
+
+- name: Fail without cluster-admin
+  fail:
+    msg: "Current user {{ cluster_probe.user | default('(unknown)') }} is not cluster-admin."
+  when: not cluster_probe.is_admin | bool
+
+- name: Fail when OpenShift is below 4.20
+  fail:
+    msg: "OpenShift {{ cluster_probe.ocp_version }} is below the required 4.20+."
+  when: not cluster_probe.ocp_version_ok | bool
+
+- name: Fail when worker count is too low
+  fail:
+    msg: "Need at least 1 worker node, found {{ cluster_probe.worker_count }}."
+  when: not cluster_probe.worker_count_ok | bool
+
+- name: Fail when engine/UI cannot schedule
+  fail:
+    msg: "Every worker has nvidia.com/gpu NoSchedule; add a general-purpose worker for engine/UI."
+  when: not cluster_probe.general_worker_ok | bool
+
+- name: Fail when free CPU is insufficient
+  fail:
+    msg: "Need {{ cluster_probe.need_cpu_millis }}m free CPU on workers, have {{ cluster_probe.cpu_free_millis }}m."
+  when: not cluster_probe.cpu_ok | bool
+
+- name: Fail when free memory is insufficient
+  fail:
+    msg: "Need {{ cluster_probe.need_memory_mi }}Mi free memory on workers, have {{ cluster_probe.memory_free_mi }}Mi."
+  when: not cluster_probe.memory_ok | bool
+
+- name: Fail when no StorageClass exists
+  fail:
+    msg: "No StorageClass found; PVCs for the model cache and session export will not bind."
+  when: cluster_probe.storageclass_count | int == 0
+
+- name: Fail check-only when GPU is not free
+  fail:
+    msg: >-
+      Need 1 free nvidia.com/gpu. Allocatable={{ cluster_probe.gpu_allocatable }},
+      free={{ cluster_probe.gpu_free }}.
+  when:
+    - check_only | bool
+    - not cluster_probe.gpu_ok | bool
+
+- name: Fail check-only when operators are missing or not ready
+  fail:
+    msg: "Operators missing or not Succeeded: {{ cluster_probe.operators_missing | join(', ') }}."
+  when:
+    - check_only | bool
+    - cluster_probe.operators_missing | length > 0
+
+- name: Fail when operators are missing and install was not approved
+  fail:
+    msg: >-
+      Missing operators: {{ cluster_probe.operators_missing | join(', ') }}.
+      Re-run ./install.sh --install-operators (or answer yes when prompted).
+  when:
+    - cluster_probe.operators_missing | length > 0
+    - not install_missing_operators | bool
+    - not check_only | bool

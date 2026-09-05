@@ -1,0 +1,12 @@
+---
+- name: Install QuestShift on OpenShift via GitOps
+  hosts: localhost
+  gather_facts: false
+  vars:
+    probe_script: "{{ playbook_dir }}/scripts/cluster_probe.py"
+  roles:
+    - role: validate
+    - role: operators
+      when: not check_only | bool
+    - role: deploy
+      when: not check_only | bool

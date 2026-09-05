@@ -1,0 +1,90 @@
+---
+- name: Ensure work directory exists
+  file:
+    path: "{{ playbook_dir }}/.work"
+    state: directory
+    mode: "0755"
+
+- name: Install missing operators
+  when:
+    - cluster_probe.operators_missing | default([]) | length > 0
+  block:
+    - name: Refuse to install operators without install_missing_operators
+      fail:
+        msg: "Operators missing: {{ cluster_probe.operators_missing }}. Pass --install-operators."
+      when: not install_missing_operators | bool
+
+    - name: Install Node Feature Discovery
+      include_tasks: apply_operator.yml
+      vars:
+        operator_id: nfd
+        subscription_templates:
+          - nfd-subscription
+      when: "'nfd' in cluster_probe.operators_missing"
+
+    - name: Install NVIDIA GPU Operator
+      include_tasks: apply_operator.yml
+      vars:
+        operator_id: gpu-operator-certified
+        subscription_templates:
+          - gpu-subscription
+      when: "'gpu-operator-certified' in cluster_probe.operators_missing"
+
+    - name: Install OpenShift GitOps
+      include_tasks: apply_operator.yml
+      vars:
+        operator_id: openshift-gitops-operator
+        subscription_templates:
+          - gitops-subscription
+      when: "'openshift-gitops-operator' in cluster_probe.operators_missing"
+
+    - name: Install Red Hat OpenShift AI
+      include_tasks: apply_operator.yml
+      vars:
+        operator_id: rhods-operator
+        subscription_templates:
+          - rhoai-subscription
+      when: "'rhods-operator' in cluster_probe.operators_missing"
+
+- name: Wait for required operator CSVs
+  command: python3 "{{ playbook_dir }}/scripts/wait_operator.py" "{{ item }}"
+  register: wait_csv
+  until: wait_csv.rc == 0
+  retries: "{{ operator_wait_retries }}"
+  delay: "{{ operator_wait_delay }}"
+  changed_when: false
+  loop:
+    - nfd
+    - gpu-operator-certified
+    - openshift-gitops-operator
+    - rhods-operator
+
+- name: Ensure Node Feature Discovery instance
+  include_tasks: apply_manifest.yml
+  vars:
+    template_name: nfd-instance
+
+- name: Ensure NVIDIA ClusterPolicy
+  include_tasks: apply_manifest.yml
+  vars:
+    template_name: gpu-clusterpolicy
+
+- name: Wait until nvidia.com/gpu is free
+  command: python3 "{{ probe_script }}"
+  register: gpu_probe
+  until: (gpu_probe.stdout | from_json).gpu_free | int >= 1
+  retries: "{{ gpu_wait_retries }}"
+  delay: "{{ gpu_wait_delay }}"
+  changed_when: false
+
+- name: Refresh probe after GPU wait
+  set_fact:
+    cluster_probe: "{{ gpu_probe.stdout | from_json }}"
+
+- name: Fail if GPU still missing
+  fail:
+    msg: >-
+      Need 1 free nvidia.com/gpu. Allocatable={{ cluster_probe.gpu_allocatable }},
+      free={{ cluster_probe.gpu_free }}. Confirm an NVIDIA L4 (or compatible) worker
+      and that NFD labeled feature.node.kubernetes.io/pci-10de.present=true.
+  when: cluster_probe.gpu_free | int < 1

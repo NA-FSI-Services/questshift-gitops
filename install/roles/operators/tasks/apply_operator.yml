@@ -1,0 +1,12 @@
+---
+- name: Render {{ operator_id }} subscription manifests
+  template:
+    src: "{{ item }}.yaml.j2"
+    dest: "{{ playbook_dir }}/.work/{{ item }}.yaml"
+    mode: "0644"
+  loop: "{{ subscription_templates }}"
+
+- name: Apply {{ operator_id }} subscription
+  command: oc apply -f "{{ playbook_dir }}/.work/{{ item }}.yaml"
+  loop: "{{ subscription_templates }}"
+  changed_when: true

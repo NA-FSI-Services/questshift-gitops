@@ -1,0 +1,24 @@
+# QuestShift cluster installer defaults. Do not put tokens here.
+
+questshift_namespace: questshift
+questshift_hf_secret: questshift-hf
+min_ocp_version: "4.20"
+gitops_repo_url: https://github.com/NA-FSI-Services/questshift-gitops
+gitops_revision: main
+gitops_path: k8s
+argocd_namespace: openshift-gitops
+argocd_application: questshift
+
+# Extra var from install.sh: true installs missing operators without prompting.
+install_missing_operators: false
+check_only: false
+
+# Hugging Face token comes from the QUESTSHIFT_HF_TOKEN environment variable. Never commit it.
+questshift_hf_token: "{{ lookup('env', 'QUESTSHIFT_HF_TOKEN') | default('', true) }}"
+
+operator_wait_retries: 60
+operator_wait_delay: 20
+gpu_wait_retries: 90
+gpu_wait_delay: 20
+app_wait_retries: 90
+app_wait_delay: 20

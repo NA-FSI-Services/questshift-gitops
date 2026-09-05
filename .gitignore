@@ -10,5 +10,11 @@ secret.yaml
 hf-token*
 .hf_token
 
+# Installer workdir
+install/.work/
+install/.ansible/
+install/scripts/__pycache__/
+*.pyc
+
 .DS_Store
 *.swp

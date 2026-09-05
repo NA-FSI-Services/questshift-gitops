@@ -1,0 +1,69 @@
+---
+- name: Hugging Face token is required
+  fail:
+    msg: "Set QUESTSHIFT_HF_TOKEN or pass --hf-token. The value is never written to git."
+  when: questshift_hf_token | length == 0
+
+- name: Ensure work directory exists
+  file:
+    path: "{{ playbook_dir }}/.work"
+    state: directory
+    mode: "0755"
+
+- name: Wait for the Argo CD Application CRD
+  command: oc wait --for=condition=Established crd/applications.argoproj.io --timeout=300s
+  register: wait_crd
+  changed_when: false
+
+- name: Wait for the openshift-gitops server
+  command: >-
+    oc rollout status deploy/openshift-gitops-server
+    -n {{ argocd_namespace }} --timeout=300s
+  register: wait_argocd
+  changed_when: false
+
+- name: Apply QuestShift namespace
+  shell: oc create namespace {{ questshift_namespace }} --dry-run=client -o yaml | oc apply -f -
+  register: apply_ns
+  changed_when: "'created' in apply_ns.stdout or 'configured' in apply_ns.stdout"
+
+- name: Apply Hugging Face secret from the environment (not from git)
+  shell: |
+    oc create secret generic {{ questshift_hf_secret }} \
+      --namespace {{ questshift_namespace }} \
+      --from-literal=token="${QUESTSHIFT_HF_TOKEN}" \
+      --dry-run=client -o yaml | oc apply -f -
+  environment:
+    QUESTSHIFT_HF_TOKEN: "{{ questshift_hf_token }}"
+  no_log: true
+  changed_when: true
+
+- name: Render Argo CD Application
+  template:
+    src: application.yaml.j2
+    dest: "{{ playbook_dir }}/.work/application.yaml"
+    mode: "0644"
+
+- name: Apply Argo CD Application
+  command: oc apply -f "{{ playbook_dir }}/.work/application.yaml"
+  changed_when: true
+
+- name: Wait for QuestShift Application to become Healthy
+  command: python3 "{{ playbook_dir }}/scripts/wait_application.py" "{{ argocd_namespace }}" "{{ argocd_application }}"
+  register: wait_app
+  until: wait_app.rc == 0
+  retries: "{{ app_wait_retries }}"
+  delay: "{{ app_wait_delay }}"
+  changed_when: false
+
+- name: Read the QuestShift route
+  command: oc get route questshift -n {{ questshift_namespace }} -o jsonpath={.spec.host}
+  register: qs_route
+  changed_when: false
+  failed_when: false
+
+- name: Show the party URL
+  debug:
+    msg: >-
+      QuestShift GitOps sync is Healthy.
+      {{ ('https://' + qs_route.stdout) if qs_route.stdout else 'Route not ready yet; oc get route -n questshift' }}

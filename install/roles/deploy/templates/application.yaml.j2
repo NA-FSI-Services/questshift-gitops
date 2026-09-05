@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ argocd_application }}
+  namespace: {{ argocd_namespace }}
+  labels:
+    app.kubernetes.io/part-of: questshift
+spec:
+  project: default
+  source:
+    repoURL: {{ gitops_repo_url }}
+    targetRevision: {{ gitops_revision }}
+    path: {{ gitops_path }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ questshift_namespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

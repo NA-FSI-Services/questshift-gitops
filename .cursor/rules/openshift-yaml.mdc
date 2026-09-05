@@ -6,7 +6,7 @@ alwaysApply: false
 
 # OpenShift YAML
 
-- Apply with `oc apply -k k8s/`. Namespace `questshift`. One party; do not add a session router.
+- Apply with `./install.sh` (Argo CD Application on `k8s/`). `oc apply -k k8s/` is fallback only. Namespace `questshift`. One party; do not add a session router.
 - `llm-deployment.yaml`: image `vllm/vllm-openai`, model `ibm-granite/granite-3.1-8b-instruct`, `nvidia.com/gpu: "1"`. No Ollama container.
 - Engine Deployment is JVM. Do not switch to a native image. Mount campaigns ConfigMap read-only.
 - Route targets the UI Service only; nginx already proxies `/api/` and `/ws/`.
