@@ -14,3 +14,4 @@ Read `AGENTS.md` first (this repo), then the docs-repo map.
 - Apply with `./install.sh` (OpenShift GitOps Application). `oc apply -k k8s/` is fallback only. Keep GPU request exactly `1`.
 - Never commit the Hugging Face token, kubeconfigs, or a `Secret` YAML with `stringData`. `questshift-hf` is `oc create secret` / the installer only.
 - v1 non-goals: TTS pods, extra campaigns, extra Routes.
+- Quality: `./verify.sh` (yamllint, ruff, shellcheck, kustomize, pytest-cov). Pre-commit: `./.githooks/install`.

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# yamllint, ruff, pytest coverage on GitOps helpers.
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+CONFIG="$ROOT/.githooks/config"
+if [[ -f "$CONFIG" ]]; then
+    # shellcheck disable=SC1090
+    source "$CONFIG"
+fi
+
+if [[ "${SKIP_QUESTSHIFT_HOOKS:-}" == "1" ]]; then
+    echo "questshift-gitops pre-commit: skipped (SKIP_QUESTSHIFT_HOOKS=1)"
+    exit 0
+fi
+
+if ! git diff --cached --name-only --diff-filter=ACMR | grep -Eq '\.(ya?ml|py|toml|sh)$|^k8s/|^install/|^argocd/|^\.githooks/|^verify\.sh$'; then
+    exit 0
+fi
+
+echo "questshift-gitops pre-commit: yamllint, ruff, coverage"
+./verify.sh

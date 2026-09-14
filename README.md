@@ -41,3 +41,14 @@ The Hugging Face token is created as secret `questshift-hf` in namespace `quests
 | [k8s/pvc.yaml](k8s/pvc.yaml) | Model weights |
 
 Images are placeholders (`image-registry.openshift-image-registry.svc:5000/questshift/...`) until CI publishes builds. Emergency fallback: `oc apply -k k8s/` after operators and `questshift-hf` exist.
+
+## Quality gates
+
+Python 3.11+.
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+./verify.sh              # yamllint, ruff, shellcheck, kustomize, pytest-cov ≥ 80%
+```
+
+Pre-commit (once per clone): `./.githooks/install`. PRs to `main` run **Quality** / **Format, lint, coverage**.

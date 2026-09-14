@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+chmod +x "$ROOT/.githooks/pre-commit" "$ROOT/.githooks/install" "$ROOT/verify.sh"
+git config core.hooksPath .githooks
+if [[ ! -f "$ROOT/.githooks/config" ]]; then
+    cp "$ROOT/.githooks/config.example" "$ROOT/.githooks/config"
+    echo "Wrote .githooks/config from config.example (gitignored)."
+fi
+echo "Enabled pre-commit for $(basename "$ROOT") (core.hooksPath=.githooks)."
+echo "Bypass: SKIP_QUESTSHIFT_HOOKS=1 or git commit --no-verify"

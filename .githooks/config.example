@@ -1,0 +1,2 @@
+# Local pre-commit overrides. Copy to .githooks/config (gitignored).
+# SKIP_QUESTSHIFT_HOOKS=1

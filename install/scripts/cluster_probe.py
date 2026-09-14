@@ -10,7 +10,6 @@ import subprocess
 import sys
 from typing import Any
 
-
 CHANNEL_FALLBACKS = {
     "nfd": "stable",
     "gpu-operator-certified": "v26.3",
@@ -114,7 +113,7 @@ def default_channel(package: str) -> str:
     pm = oc_json("packagemanifest", package, "-n", "openshift-marketplace")
     if not pm:
         return fallback
-    return ((pm.get("status") or {}).get("defaultChannel") or fallback)
+    return (pm.get("status") or {}).get("defaultChannel") or fallback
 
 
 def parse_version(version: str) -> tuple[int, int]:
@@ -160,7 +159,9 @@ def probe() -> dict[str, Any]:
     can = oc("auth", "can-i", "*", "*", "--all-namespaces", check=False)
     report["is_admin"] = can.stdout.strip().lower() == "yes"
     if not report["is_admin"]:
-        report["errors"].append("current user is not cluster-admin (oc auth can-i '*' '*' --all-namespaces)")
+        report["errors"].append(
+            "current user is not cluster-admin (oc auth can-i '*' '*' --all-namespaces)"
+        )
 
     cv = oc_json("clusterversion", "version")
     version = ""
@@ -175,9 +176,7 @@ def probe() -> dict[str, Any]:
         major_minor = parse_version(version)
         report["ocp_version_ok"] = major_minor >= MIN_OCP
         if not report["ocp_version_ok"]:
-            report["errors"].append(
-                f"OpenShift {version} is below the required 4.20+"
-            )
+            report["errors"].append(f"OpenShift {version} is below the required 4.20+")
     else:
         report["ocp_version_ok"] = False
         report["errors"].append("could not read clusterversion")
@@ -228,7 +227,10 @@ def probe() -> dict[str, Any]:
     report["need_storage_gi"] = NEED_STORAGE_GI
 
     nvidia_pci = any(
-        (n.get("metadata") or {}).get("labels", {}).get("feature.node.kubernetes.io/pci-10de.present") == "true"
+        (n.get("metadata") or {})
+        .get("labels", {})
+        .get("feature.node.kubernetes.io/pci-10de.present")
+        == "true"
         for n in workers
     )
     report["nvidia_pci_label"] = nvidia_pci
@@ -253,7 +255,9 @@ def probe() -> dict[str, Any]:
         for sc in storage_classes
     )
     if not storage_classes:
-        report["errors"].append("no StorageClass found; PVCs for model cache and session export will fail")
+        report["errors"].append(
+            "no StorageClass found; PVCs for model cache and session export will fail"
+        )
     elif not report["has_default_storageclass"]:
         report["warnings"].append("no default StorageClass; set one before PVC bind")
 
@@ -298,7 +302,8 @@ def probe() -> dict[str, Any]:
         gpu_op_ready = any(o["id"] == "gpu-operator-certified" and o["ready"] for o in operators)
         if nvidia_pci or not gpu_op_ready:
             report["warnings"].append(
-                "nvidia.com/gpu not free/allocatable yet; re-check after the NVIDIA GPU Operator is Ready"
+                "nvidia.com/gpu not free/allocatable yet; "
+                "re-check after the NVIDIA GPU Operator is Ready"
             )
         else:
             report["errors"].append(
