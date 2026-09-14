@@ -25,4 +25,4 @@ One OpenShift project = one party. Facilitators run `./install.sh` (Ansible). Th
 - Images are registry placeholders until CI publishes. Do not invent a second Route or session router.
 - PVC `questshift-llm-cache` (weights) and `questshift-session-export` (YAML dumps).
 - Emergency fallback: `oc apply -k k8s/` after operators and the secret exist.
-- Quality: `./verify.sh` (yamllint, ruff, shellcheck, kustomize, pytest-cov ≥ 80% on probe/helpers). Pre-commit: `./.githooks/install`. CI: `.github/workflows/quality.yml`.
+- Quality: `./verify.sh` (yamllint, ruff, shellcheck, kustomize, pytest-cov ≥ 80% on probe/helpers). Pre-commit: `./.githooks/install`. CI: `.github/workflows/quality.yml`. Dependabot: `.github/dependabot.yml` (weekly GitHub Actions).
