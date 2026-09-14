@@ -1,2 +1,3 @@
 # Local pre-commit overrides. Copy to .githooks/config (gitignored).
-# SKIP_QUESTSHIFT_HOOKS=1
+# SKIP_QUESTSHIFT_HOOKS=1 skips lint/coverage only. Secret scan still runs.
+# git commit --no-verify skips the whole hook.

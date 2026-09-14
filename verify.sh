@@ -11,7 +11,7 @@ fi
 "$PYTHON" -m ruff format --check tools tests install/scripts
 "$PYTHON" -m yamllint -c .yamllint.yaml k8s/*.yaml argocd
 if command -v shellcheck >/dev/null 2>&1; then
-  shellcheck install.sh verify.sh .githooks/pre-commit .githooks/install
+  shellcheck install.sh verify.sh .githooks/pre-commit .githooks/install .githooks/check-secrets
 fi
 if command -v kubectl >/dev/null 2>&1; then
   kubectl kustomize k8s >/dev/null

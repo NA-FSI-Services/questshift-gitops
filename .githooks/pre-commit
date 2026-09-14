@@ -11,8 +11,10 @@ if [[ -f "$CONFIG" ]]; then
     source "$CONFIG"
 fi
 
+"$ROOT/.githooks/check-secrets" staged
+
 if [[ "${SKIP_QUESTSHIFT_HOOKS:-}" == "1" ]]; then
-    echo "questshift-gitops pre-commit: skipped (SKIP_QUESTSHIFT_HOOKS=1)"
+    echo "questshift-gitops pre-commit: lint skipped (SKIP_QUESTSHIFT_HOOKS=1); secret scan already ran"
     exit 0
 fi
 
