@@ -104,6 +104,28 @@ require_oc_login() {
   fi
 }
 
+print_ui_route() {
+  if [[ "${CHECK_ONLY}" == true ]]; then
+    return 0
+  fi
+  local host=""
+  for _ in 1 2 3 4 5 6; do
+    host="$(oc get route questshift -n questshift -o jsonpath='{.spec.host}' 2>/dev/null || true)"
+    if [[ -n "${host}" ]]; then
+      break
+    fi
+    sleep 5
+  done
+  echo
+  echo "==> QuestShift UI"
+  if [[ -n "${host}" ]]; then
+    echo "    Open https://${host} to start a campaign."
+  else
+    echo "    Route not ready yet. After GitOps syncs the UI:"
+    echo "      oc get route questshift -n questshift"
+  fi
+}
+
 need oc
 need python3
 need ansible-playbook
@@ -170,3 +192,5 @@ ANSIBLE_NOCOWS=1 ansible-playbook site.yml \
   -e "add_gpu_nodes=${ADD_GPU_NODES}" \
   -e "gitops_repo_url=${REPO_URL}" \
   -e "gitops_revision=${REVISION}"
+
+print_ui_route

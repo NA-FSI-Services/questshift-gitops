@@ -65,5 +65,6 @@
 - name: Show the party URL
   debug:
     msg: >-
-      QuestShift GitOps sync is Healthy.
-      {{ ('https://' + qs_route.stdout) if qs_route.stdout else 'Route not ready yet; oc get route -n questshift' }}
+      {{ ('Open https://' + qs_route.stdout + ' to start a campaign.')
+         if qs_route.stdout else
+         'Route not ready yet; oc get route questshift -n questshift' }}

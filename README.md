@@ -30,6 +30,8 @@ Do not clone a GPU MachineSet when none exist:
 
 Validate only: `./install.sh --check-only`
 
+A successful install prints the UI Route (`https://…`) so you can start a campaign. Do not commit that hostname.
+
 Canonical steps: [INSTALL.md](https://github.com/NA-FSI-Services/questshift/blob/main/docs/INSTALL.md) (local `/Users/dtorresf/Documents/GitHub/na-fsi-services/questshift/questshift/docs/INSTALL.md`).
 
 The Hugging Face token is created as secret `questshift-hf` in namespace `questshift`. Do not commit the token, a Secret YAML, a kubeconfig, a CA certificate, or a specific cluster API URL.
