@@ -22,6 +22,12 @@ export QUESTSHIFT_HF_TOKEN=...   # never commit
 ./install.sh --install-operators
 ```
 
+Do not clone a GPU MachineSet when none exist:
+
+```bash
+./install.sh --install-operators --no-add-gpu-nodes
+```
+
 Validate only: `./install.sh --check-only`
 
 Canonical steps: [INSTALL.md](https://github.com/NA-FSI-Services/questshift/blob/main/docs/INSTALL.md) (local `/Users/dtorresf/Documents/GitHub/na-fsi-services/questshift/questshift/docs/INSTALL.md`).

@@ -8,6 +8,7 @@ INSTALL="${ROOT}/install"
 INSTALL_OPERATORS=false
 CHECK_ONLY=false
 SKIP_DEPLOY=false
+ADD_GPU_NODES=true
 HF_TOKEN=""
 REPO_URL="https://github.com/NA-FSI-Services/questshift-gitops"
 REVISION="main"
@@ -23,6 +24,7 @@ QuestShift installer
 Options:
   --install-operators   Install missing operators without prompting
   --check-only          Validate access, hardware, and operators; do not deploy
+  --no-add-gpu-nodes    Do not clone a GPU MachineSet when the cluster has no NVIDIA GPU
   --hf-token TOKEN      Hugging Face token (prefer QUESTSHIFT_HF_TOKEN; argv is visible in ps)
   --repo-url URL        GitOps repo (default: NA-FSI-Services/questshift-gitops)
   --revision REV        Git revision (default: main)
@@ -33,6 +35,9 @@ You must already be logged in as cluster-admin (`oc whoami` must succeed).
 The installer does not accept cluster API URLs or tokens; keep those in a
 local `oc login` / KUBECONFIG and a gitignored `.env`.
 `--install-operators` without QUESTSHIFT_HF_TOKEN installs operators only.
+When the cluster has no NVIDIA GPU, the installer clones a GPU MachineSet
+(g6.4xlarge / L4) from the first MachineSet and waits for nvidia.com/gpu.
+Pass --no-add-gpu-nodes to skip that.
 The Hugging Face token is applied as secret questshift-hf and is never committed.
 EOF
 }
@@ -41,6 +46,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --install-operators) INSTALL_OPERATORS=true; shift ;;
     --check-only) CHECK_ONLY=true; shift ;;
+    --no-add-gpu-nodes) ADD_GPU_NODES=false; shift ;;
     --hf-token)
       HF_TOKEN="${2:-}"
       shift 2
@@ -161,5 +167,6 @@ ANSIBLE_NOCOWS=1 ansible-playbook site.yml \
   -e "install_missing_operators=${INSTALL_OPERATORS}" \
   -e "check_only=${CHECK_ONLY}" \
   -e "skip_deploy=${SKIP_DEPLOY}" \
+  -e "add_gpu_nodes=${ADD_GPU_NODES}" \
   -e "gitops_repo_url=${REPO_URL}" \
   -e "gitops_revision=${REVISION}"

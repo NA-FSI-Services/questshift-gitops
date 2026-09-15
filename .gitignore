@@ -17,6 +17,9 @@ secret.yaml
 hf-token*
 .hf_token
 
+gpu-node.yaml
+*.machineset.yaml
+
 # Installer workdir
 install/.work/
 install/.ansible/

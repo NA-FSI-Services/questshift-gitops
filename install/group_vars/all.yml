@@ -20,7 +20,11 @@ questshift_hf_token: "{{ lookup('env', 'QUESTSHIFT_HF_TOKEN') | default('', true
 
 operator_wait_retries: 60
 operator_wait_delay: 20
-gpu_wait_retries: 90
+gpu_wait_retries: 120
 gpu_wait_delay: 20
+# Default true: clone a GPU MachineSet (g6.4xlarge / L4) when NFD sees no NVIDIA GPU.
+# ./install.sh --no-add-gpu-nodes skips that.
+add_gpu_nodes: true
+gpu_instance_type: "{{ lookup('env', 'QUESTSHIFT_GPU_INSTANCE_TYPE') | default('g6.4xlarge', true) }}"
 app_wait_retries: 90
 app_wait_delay: 20

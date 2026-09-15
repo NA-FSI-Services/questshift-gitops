@@ -78,13 +78,32 @@
   changed_when: false
   failed_when: false
 
-- name: Fail when the cluster has no NVIDIA GPU
+- name: Fail when the cluster has no NVIDIA GPU and adding nodes was opted out
   fail:
     msg: >-
       NFD did not label feature.node.kubernetes.io/pci-10de.present.
       QuestShift v1 needs one NVIDIA L4-class GPU (nvidia.com/gpu: 1).
-      Operators are installed; GPU workloads cannot schedule on this cluster.
-  when: not (pci_probe.stdout | from_json).nvidia_pci_label | default(false) | bool
+      Re-run without --no-add-gpu-nodes to clone a GPU MachineSet, or add a GPU worker yourself.
+  when:
+    - not add_gpu_nodes | bool
+    - not (pci_probe.stdout | from_json).nvidia_pci_label | default(false) | bool
+    - (pci_probe.stdout | from_json).gpu_allocatable | default(0) | int < 1
+
+- name: Clone a GPU MachineSet when no NVIDIA GPU is present
+  command: >-
+    python3 "{{ playbook_dir }}/scripts/ensure_gpu_machineset.py"
+    --instance-type "{{ gpu_instance_type }}"
+  register: gpu_ms
+  changed_when: "'applied' in (gpu_ms.stdout | default(''))"
+  when:
+    - add_gpu_nodes | bool
+    - not (pci_probe.stdout | from_json).nvidia_pci_label | default(false) | bool
+    - (pci_probe.stdout | from_json).gpu_allocatable | default(0) | int < 1
+
+- name: Show GPU MachineSet result
+  debug:
+    msg: "{{ gpu_ms.stdout | default('') }}"
+  when: gpu_ms is defined and gpu_ms.stdout | default('') | length > 0
 
 - name: Wait until nvidia.com/gpu is free
   command: python3 "{{ probe_script }}"
