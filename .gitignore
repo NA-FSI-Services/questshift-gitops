@@ -1,9 +1,16 @@
 # Local secrets — never commit Hugging Face tokens, kubeconfigs, or Secret YAML with real data
 .env
 .env.*
+!.env.example
 *.pem
+*.crt
+*.key
 kubeconfig
 kubeconfig.*
+.kubeconfig
+*.kubeconfig
+.cluster-ca.crt
+.cluster.env
 secrets.yaml
 secret.yaml
 *-secret.yaml

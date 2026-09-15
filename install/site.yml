@@ -9,4 +9,4 @@
     - role: operators
       when: not check_only | bool
     - role: deploy
-      when: not check_only | bool
+      when: not check_only | bool and not skip_deploy | bool

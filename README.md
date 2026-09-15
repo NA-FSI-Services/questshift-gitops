@@ -4,11 +4,14 @@ OpenShift manifests for one party: UI, Quarkus engine, and vLLM serving IBM Gran
 
 ## Install
 
-1. Set up an OpenShift **4.20+** cluster.
-2. Run the installer (cluster-admin `oc` session):
+1. Set up an OpenShift **4.20+** cluster (ephemeral workshop clusters are fine; each install is a different cluster).
+2. Log in as cluster-admin. `./install.sh` refuses to run unless `oc whoami` succeeds and does not accept API URLs or tokens as flags.
+3. Copy `.env.example` to `.env` (gitignored) and set `QUESTSHIFT_HF_TOKEN`.
 
 ```bash
 oc login --server=https://api.CLUSTER:6443
+oc whoami
+cp .env.example .env   # never commit
 ./install.sh
 ```
 
@@ -23,13 +26,14 @@ Validate only: `./install.sh --check-only`
 
 Canonical steps: [INSTALL.md](https://github.com/NA-FSI-Services/questshift/blob/main/docs/INSTALL.md) (local `/Users/dtorresf/Documents/GitHub/na-fsi-services/questshift/questshift/docs/INSTALL.md`).
 
-The Hugging Face token is created as secret `questshift-hf` in namespace `questshift`. Do not commit the token or a Secret YAML.
+The Hugging Face token is created as secret `questshift-hf` in namespace `questshift`. Do not commit the token, a Secret YAML, a kubeconfig, a CA certificate, or a specific cluster API URL.
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
-| [install.sh](install.sh) | Facilitator entrypoint (Ansible) |
+| [install.sh](install.sh) | Facilitator entrypoint (Ansible). Requires an existing `oc` login. |
+| [.env.example](.env.example) | Placeholder for gitignored `.env` (`QUESTSHIFT_HF_TOKEN`) |
 | [install/](install/) | Probe, operator roles, GitOps deploy |
 | [argocd/application.yaml](argocd/application.yaml) | Argo CD Application (synced by the installer) |
 | [k8s/llm-deployment.yaml](k8s/llm-deployment.yaml) | vLLM + L4 + PVC |

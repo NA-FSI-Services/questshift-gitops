@@ -142,6 +142,8 @@ def allocatable(node: dict[str, Any], resource: str) -> str | None:
 def probe() -> dict[str, Any]:
     report: dict[str, Any] = {
         "oc_present": shutil.which("oc") is not None,
+        "logged_in": False,
+        "is_admin": False,
         "errors": [],
         "warnings": [],
     }
@@ -153,8 +155,8 @@ def probe() -> dict[str, Any]:
     report["user"] = who.stdout.strip() if who.returncode == 0 else ""
     if who.returncode != 0:
         report["errors"].append("oc whoami failed; log in with oc login first")
-        report["is_admin"] = False
         return report
+    report["logged_in"] = True
 
     can = oc("auth", "can-i", "*", "*", "--all-namespaces", check=False)
     report["is_admin"] = can.stdout.strip().lower() == "yes"
@@ -321,7 +323,71 @@ def probe() -> dict[str, Any]:
     return report
 
 
-def main() -> int:
+def render_summary(data: dict[str, Any]) -> str:
+    lines = [
+        f"  user:              {data.get('user')}",
+        f"  logged in:         {data.get('logged_in')}",
+        f"  cluster-admin:     {data.get('is_admin')}",
+        f"  openshift:         {data.get('ocp_version')}",
+        f"  workers:           {data.get('worker_count')}",
+        (
+            f"  free CPU (m):      {data.get('cpu_free_millis')} "
+            f"(need {data.get('need_cpu_millis')})"
+        ),
+        (f"  free memory (Mi):  {data.get('memory_free_mi')} (need {data.get('need_memory_mi')})"),
+        f"  free GPU:          {data.get('gpu_free')} (need {data.get('need_gpu')})",
+        "  operators:",
+    ]
+    for op in data.get("operators") or []:
+        state = "ready" if op.get("ready") else ("present" if op.get("present") else "missing")
+        lines.append(f"    - {op.get('title')}: {state}")
+    if data.get("warnings"):
+        lines.append("  warnings:")
+        lines.extend(f"    - {warning}" for warning in data["warnings"])
+    if data.get("errors"):
+        lines.append("  probe notes:")
+        lines.extend(f"    - {err}" for err in data["errors"])
+    return "\n".join(lines) + "\n"
+
+
+def refusal_reasons(data: dict[str, Any]) -> list[str]:
+    bad: list[str] = []
+    if not data.get("logged_in"):
+        bad.append(
+            "not logged in; run oc login as cluster-admin first "
+            "(do not commit cluster URLs or tokens)"
+        )
+        return bad
+    if not data.get("is_admin"):
+        bad.append("current user is not cluster-admin")
+    if data.get("ocp_version_ok") is False:
+        bad.append("OpenShift must be 4.20+")
+    if data.get("worker_count_ok") is False:
+        bad.append("need at least 1 worker node")
+    if data.get("general_worker_ok") is False:
+        bad.append("need a worker without nvidia.com/gpu NoSchedule for engine/UI")
+    if data.get("cpu_ok") is False:
+        bad.append("not enough free CPU on workers")
+    if data.get("memory_ok") is False:
+        bad.append("not enough free memory on workers")
+    if int(data.get("storageclass_count") or 0) == 0:
+        bad.append("no StorageClass found")
+    return bad
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = sys.argv[1:] if argv is None else argv
+    if args and args[0] == "--summarize":
+        data = json.load(sys.stdin)
+        sys.stdout.write(render_summary(data))
+        return 0
+    if args and args[0] == "--gate":
+        data = json.load(sys.stdin)
+        bad = refusal_reasons(data)
+        if bad:
+            print("refusing to continue: " + "; ".join(bad), file=sys.stderr)
+            return 1
+        return 0
     data = probe()
     json.dump(data, sys.stdout, indent=2)
     sys.stdout.write("\n")

@@ -4,6 +4,8 @@ kind: ClusterPolicy
 metadata:
   name: gpu-cluster-policy
 spec:
+  # GPU Operator 26.3 ClusterPolicy CRD requires spec.daemonsets.
+  daemonsets: {}
   operator:
     defaultRuntime: crio
   driver:

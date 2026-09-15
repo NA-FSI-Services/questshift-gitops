@@ -11,11 +11,18 @@
 - name: Show probe summary
   debug:
     msg:
-      - "user={{ cluster_probe.user }} admin={{ cluster_probe.is_admin }}"
+      - "user={{ cluster_probe.user }} logged_in={{ cluster_probe.logged_in | default(false) }} admin={{ cluster_probe.is_admin }}"
       - "ocp={{ cluster_probe.ocp_version }} workers={{ cluster_probe.worker_count }}"
       - "cpu_free_m={{ cluster_probe.cpu_free_millis }}/{{ cluster_probe.need_cpu_millis }} mem_free_mi={{ cluster_probe.memory_free_mi }}/{{ cluster_probe.need_memory_mi }}"
       - "gpu_free={{ cluster_probe.gpu_free }}/{{ cluster_probe.need_gpu }} operators_missing={{ cluster_probe.operators_missing }}"
       - "warnings={{ cluster_probe.warnings }}"
+
+- name: Fail when not logged in
+  fail:
+    msg: >-
+      Not logged in to OpenShift. Run oc login as cluster-admin first.
+      Keep API URLs, tokens, kubeconfigs, and CA certificates out of git.
+  when: not cluster_probe.logged_in | default(false) | bool
 
 - name: Fail without cluster-admin
   fail:

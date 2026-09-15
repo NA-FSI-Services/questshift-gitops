@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from io import StringIO
 from types import SimpleNamespace
 
 import cluster_probe
@@ -50,6 +52,7 @@ def test_probe_without_oc(monkeypatch) -> None:
     monkeypatch.setattr(cluster_probe.shutil, "which", lambda _cmd: None)
     report = cluster_probe.probe()
     assert report["oc_present"] is False
+    assert report["logged_in"] is False
     assert report["errors"]
 
 
@@ -61,8 +64,10 @@ def test_probe_whoami_fails(monkeypatch) -> None:
         lambda *a, **k: SimpleNamespace(returncode=1, stdout="", stderr="no"),
     )
     report = cluster_probe.probe()
+    assert report["logged_in"] is False
     assert report["is_admin"] is False
     assert "whoami" in report["errors"][0]
+    assert "storageclass_count" not in report
 
 
 def test_default_channel_fallback(monkeypatch) -> None:
@@ -174,6 +179,7 @@ def test_probe_healthy_cluster(monkeypatch) -> None:
     _login_ok(monkeypatch)
     monkeypatch.setattr(cluster_probe, "oc_json", _oc_json_factory())
     report = cluster_probe.probe()
+    assert report["logged_in"] is True
     assert report["is_admin"] is True
     assert report["ocp_version_ok"] is True
     assert report["cpu_ok"] is True
@@ -328,5 +334,73 @@ def test_probe_single_worker_recommended_warning(monkeypatch) -> None:
 
 def test_main_dumps_json(monkeypatch, capsys) -> None:
     monkeypatch.setattr(cluster_probe, "probe", lambda: {"ok": True})
-    assert cluster_probe.main() == 0
+    assert cluster_probe.main([]) == 0
     assert "ok" in capsys.readouterr().out
+
+
+def test_refusal_reasons_require_login() -> None:
+    reasons = cluster_probe.refusal_reasons({"logged_in": False, "storageclass_count": 0})
+    assert reasons == [
+        "not logged in; run oc login as cluster-admin first (do not commit cluster URLs or tokens)"
+    ]
+
+
+def test_refusal_reasons_hardware() -> None:
+    reasons = cluster_probe.refusal_reasons(
+        {
+            "logged_in": True,
+            "is_admin": False,
+            "ocp_version_ok": False,
+            "worker_count_ok": False,
+            "general_worker_ok": False,
+            "cpu_ok": False,
+            "memory_ok": False,
+            "storageclass_count": 0,
+        }
+    )
+    assert "cluster-admin" in reasons[0]
+    assert any("4.20+" in r for r in reasons)
+    assert any("StorageClass" in r for r in reasons)
+
+
+def test_render_summary_and_cli_gate(monkeypatch, capsys) -> None:
+    data = {
+        "user": "kubeadmin",
+        "logged_in": True,
+        "is_admin": True,
+        "ocp_version": "4.20.1",
+        "worker_count": 2,
+        "cpu_free_millis": 4000,
+        "need_cpu_millis": 2300,
+        "memory_free_mi": 20000,
+        "need_memory_mi": 17000,
+        "gpu_free": 1,
+        "need_gpu": 1,
+        "operators": [{"title": "Node Feature Discovery", "ready": True}],
+        "warnings": ["one warning"],
+        "errors": ["one error"],
+    }
+    text = cluster_probe.render_summary(data)
+    assert "kubeadmin" in text
+    assert "Node Feature Discovery: ready" in text
+    assert "one warning" in text
+
+    monkeypatch.setattr(cluster_probe.sys, "stdin", StringIO(json.dumps(data)))
+    assert cluster_probe.main(["--summarize"]) == 0
+    assert "kubeadmin" in capsys.readouterr().out
+
+    monkeypatch.setattr(cluster_probe.sys, "stdin", StringIO('{"logged_in": false}'))
+    assert cluster_probe.main(["--gate"]) == 1
+
+    healthy = {
+        "logged_in": True,
+        "is_admin": True,
+        "ocp_version_ok": True,
+        "worker_count_ok": True,
+        "general_worker_ok": True,
+        "cpu_ok": True,
+        "memory_ok": True,
+        "storageclass_count": 1,
+    }
+    monkeypatch.setattr(cluster_probe.sys, "stdin", StringIO(json.dumps(healthy)))
+    assert cluster_probe.main(["--gate"]) == 0

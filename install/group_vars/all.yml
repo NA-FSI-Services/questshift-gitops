@@ -12,8 +12,10 @@ argocd_application: questshift
 # Extra var from install.sh: true installs missing operators without prompting.
 install_missing_operators: false
 check_only: false
+skip_deploy: false
 
-# Hugging Face token comes from the QUESTSHIFT_HF_TOKEN environment variable. Never commit it.
+# Hugging Face token comes from the QUESTSHIFT_HF_TOKEN environment variable
+# or a gitignored .env sourced by ./install.sh. Never commit it.
 questshift_hf_token: "{{ lookup('env', 'QUESTSHIFT_HF_TOKEN') | default('', true) }}"
 
 operator_wait_retries: 60

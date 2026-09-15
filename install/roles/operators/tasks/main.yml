@@ -69,6 +69,23 @@
   vars:
     template_name: gpu-clusterpolicy
 
+- name: Wait briefly for NFD to label NVIDIA PCI
+  command: python3 "{{ probe_script }}"
+  register: pci_probe
+  until: (pci_probe.stdout | from_json).nvidia_pci_label | default(false) | bool
+  retries: 6
+  delay: 20
+  changed_when: false
+  failed_when: false
+
+- name: Fail when the cluster has no NVIDIA GPU
+  fail:
+    msg: >-
+      NFD did not label feature.node.kubernetes.io/pci-10de.present.
+      QuestShift v1 needs one NVIDIA L4-class GPU (nvidia.com/gpu: 1).
+      Operators are installed; GPU workloads cannot schedule on this cluster.
+  when: not (pci_probe.stdout | from_json).nvidia_pci_label | default(false) | bool
+
 - name: Wait until nvidia.com/gpu is free
   command: python3 "{{ probe_script }}"
   register: gpu_probe

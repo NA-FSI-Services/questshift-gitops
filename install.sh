@@ -7,7 +7,8 @@ INSTALL="${ROOT}/install"
 
 INSTALL_OPERATORS=false
 CHECK_ONLY=false
-HF_TOKEN="${QUESTSHIFT_HF_TOKEN:-}"
+SKIP_DEPLOY=false
+HF_TOKEN=""
 REPO_URL="https://github.com/NA-FSI-Services/questshift-gitops"
 REVISION="main"
 
@@ -28,7 +29,10 @@ Options:
   -h, --help            Show this help
 
 Prerequisites on this machine: oc, python3, ansible-playbook (ansible-core).
-Log in as cluster-admin first: oc login ...
+You must already be logged in as cluster-admin (`oc whoami` must succeed).
+The installer does not accept cluster API URLs or tokens; keep those in a
+local `oc login` / KUBECONFIG and a gitignored `.env`.
+`--install-operators` without QUESTSHIFT_HF_TOKEN installs operators only.
 The Hugging Face token is applied as secret questshift-hf and is never committed.
 EOF
 }
@@ -49,6 +53,11 @@ while [[ $# -gt 0 ]]; do
       REVISION="${2:-}"
       shift 2
       ;;
+    --server|--token|--password|--username|-u|-p)
+      echo "The installer does not accept cluster credentials." >&2
+      echo "Log in with oc login first. Keep API URLs, tokens, and kubeconfigs out of git." >&2
+      exit 2
+      ;;
     -h|--help) usage; exit 0 ;;
     *) echo "unknown argument: $1" >&2; usage; exit 2 ;;
   esac
@@ -61,60 +70,52 @@ need() {
   }
 }
 
+load_local_env() {
+  local env_file="${ROOT}/.env"
+  local saved_hf saved_kube
+  saved_hf="${QUESTSHIFT_HF_TOKEN:-}"
+  saved_kube="${KUBECONFIG:-}"
+  if [[ -f "${env_file}" ]]; then
+    set -a
+    # shellcheck disable=SC1090,SC1091
+    source "${env_file}"
+    set +a
+  fi
+  if [[ -n "${saved_hf}" ]]; then
+    export QUESTSHIFT_HF_TOKEN="${saved_hf}"
+  fi
+  if [[ -n "${saved_kube}" ]]; then
+    export KUBECONFIG="${saved_kube}"
+  fi
+}
+
+require_oc_login() {
+  if ! oc whoami >/dev/null 2>&1; then
+    echo "Not logged in to OpenShift. Run oc login as cluster-admin for your cluster first." >&2
+    echo "./install.sh will not run without an existing oc session." >&2
+    echo "Keep API URLs, tokens, kubeconfigs, and CA certificates in local env / a gitignored .env — never in git." >&2
+    exit 1
+  fi
+}
+
 need oc
 need python3
 need ansible-playbook
+load_local_env
+if [[ -z "${HF_TOKEN}" ]]; then
+  HF_TOKEN="${QUESTSHIFT_HF_TOKEN:-}"
+fi
 chmod +x "${INSTALL}/scripts/"*.py 2>/dev/null || true
+
+echo "==> checking oc login"
+require_oc_login
+echo "  user: $(oc whoami)"
 
 echo "==> probing cluster"
 PROBE_JSON="$(python3 "${INSTALL}/scripts/cluster_probe.py")"
 MISSING="$(printf '%s' "${PROBE_JSON}" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(" ".join(d.get("operators_missing") or []))')"
-printf '%s' "${PROBE_JSON}" | python3 -c '
-import json, sys
-data = json.load(sys.stdin)
-print(f"  user:              {data.get(\"user\")}")
-print(f"  cluster-admin:     {data.get(\"is_admin\")}")
-print(f"  openshift:         {data.get(\"ocp_version\")}")
-print(f"  workers:           {data.get(\"worker_count\")}")
-print(f"  free CPU (m):      {data.get(\"cpu_free_millis\")} (need {data.get(\"need_cpu_millis\")})")
-print(f"  free memory (Mi):  {data.get(\"memory_free_mi\")} (need {data.get(\"need_memory_mi\")})")
-print(f"  free GPU:          {data.get(\"gpu_free\")} (need {data.get(\"need_gpu\")})")
-print("  operators:")
-for op in data.get("operators") or []:
-    state = "ready" if op.get("ready") else ("present" if op.get("present") else "missing")
-    print(f"    - {op[\"title\"]}: {state}")
-if data.get("warnings"):
-    print("  warnings:")
-    for warning in data["warnings"]:
-        print(f"    - {warning}")
-if data.get("errors"):
-    print("  probe notes:")
-    for err in data["errors"]:
-        print(f"    - {err}")
-'
-
-printf '%s' "${PROBE_JSON}" | python3 -c '
-import json, sys
-data = json.load(sys.stdin)
-bad = []
-if not data.get("is_admin"):
-    bad.append("current user is not cluster-admin")
-if data.get("ocp_version_ok") is False:
-    bad.append("OpenShift must be 4.20+")
-if data.get("worker_count_ok") is False:
-    bad.append("need at least 1 worker node")
-if data.get("general_worker_ok") is False:
-    bad.append("need a worker without nvidia.com/gpu NoSchedule for engine/UI")
-if data.get("cpu_ok") is False:
-    bad.append("not enough free CPU on workers")
-if data.get("memory_ok") is False:
-    bad.append("not enough free memory on workers")
-if int(data.get("storageclass_count") or 0) == 0:
-    bad.append("no StorageClass found")
-if bad:
-    print("refusing to continue: " + "; ".join(bad), file=sys.stderr)
-    sys.exit(1)
-'
+printf '%s' "${PROBE_JSON}" | python3 "${INSTALL}/scripts/cluster_probe.py" --summarize
+printf '%s' "${PROBE_JSON}" | python3 "${INSTALL}/scripts/cluster_probe.py" --gate
 
 if [[ -n "${MISSING}" && "${INSTALL_OPERATORS}" != true && "${CHECK_ONLY}" != true ]]; then
   echo
@@ -140,8 +141,13 @@ if [[ "${CHECK_ONLY}" != true && -z "${HF_TOKEN}" ]]; then
     echo
   fi
   if [[ -z "${HF_TOKEN}" ]]; then
-    echo "A Hugging Face token is required. Pass --hf-token or QUESTSHIFT_HF_TOKEN." >&2
-    exit 1
+    if [[ "${INSTALL_OPERATORS}" == true ]]; then
+      echo "No Hugging Face token; installing operators only. Re-run with QUESTSHIFT_HF_TOKEN in a gitignored .env to deploy."
+      SKIP_DEPLOY=true
+    else
+      echo "A Hugging Face token is required. Set QUESTSHIFT_HF_TOKEN in a gitignored .env or pass --hf-token." >&2
+      exit 1
+    fi
   fi
 fi
 
@@ -154,5 +160,6 @@ cd "${INSTALL}"
 ANSIBLE_NOCOWS=1 ansible-playbook site.yml \
   -e "install_missing_operators=${INSTALL_OPERATORS}" \
   -e "check_only=${CHECK_ONLY}" \
+  -e "skip_deploy=${SKIP_DEPLOY}" \
   -e "gitops_repo_url=${REPO_URL}" \
   -e "gitops_revision=${REVISION}"
