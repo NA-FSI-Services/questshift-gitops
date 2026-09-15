@@ -12,6 +12,6 @@ Read `AGENTS.md` first (this repo), then the docs-repo map.
 - Engine JVM, UI nginx. No native image build in this repo.
 - Terminal remains simulated in the engine; these manifests must not add a login node or privileged command runner.
 - Apply with `./install.sh` (OpenShift GitOps Application) after `oc login`. The script does not take cluster API URLs or tokens. `--no-add-gpu-nodes` skips cloning a GPU MachineSet. `oc apply -k k8s/` is fallback only. Keep GPU request exactly `1`.
-- Never commit the Hugging Face token, kubeconfigs, CA certs, workshop API URLs, or a `Secret` YAML with `stringData`. `questshift-hf` is `oc create secret` / the installer only. Use a gitignored `.env` for `QUESTSHIFT_HF_TOKEN`.
+- Granite weights come from the Red Hat AI services ModelCar catalog via Tekton (`k8s/granite-pipeline.yaml`). Do not add MinIO, a Hugging Face token, `questshift-hf`, or a `Secret` YAML with `stringData`. Never commit kubeconfigs, CA certs, or workshop API URLs.
 - v1 non-goals: TTS pods, extra campaigns, extra Routes.
 - Quality: `./verify.sh` (yamllint, ruff, shellcheck, kustomize, pytest-cov). Pre-commit: `./.githooks/install`.

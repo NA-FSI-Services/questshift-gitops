@@ -43,6 +43,11 @@ spec:
                 configMapKeyRef:
                   name: questshift-engine
                   key: questshift.llm.enabled
+            - name: QUESTSHIFT_LLM_TIMEOUT_SECONDS
+              valueFrom:
+                configMapKeyRef:
+                  name: questshift-engine
+                  key: questshift.llm.timeout-seconds
           readinessProbe:
             httpGet:
               path: /q/health/ready

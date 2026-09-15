@@ -15,6 +15,7 @@ CHANNEL_FALLBACKS = {
     "gpu-operator-certified": "v26.3",
     "openshift-gitops-operator": "latest",
     "rhods-operator": "stable",
+    "openshift-pipelines-operator-rh": "latest",
 }
 
 REQUIRED_OPERATORS = (
@@ -41,6 +42,15 @@ REQUIRED_OPERATORS = (
         "title": "Red Hat OpenShift AI",
         "csv_prefixes": ("rhods-operator.",),
         "subscription_names": ("rhods-operator",),
+    },
+    {
+        "id": "openshift-pipelines-operator-rh",
+        "title": "Red Hat OpenShift Pipelines",
+        "csv_prefixes": (
+            "openshift-pipelines-operator-rh.",
+            "redhat-openshift-pipelines.",
+        ),
+        "subscription_names": ("openshift-pipelines-operator-rh",),
     },
 )
 

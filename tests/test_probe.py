@@ -95,6 +95,10 @@ def _ready_csvs() -> dict:
                 "status": {"phase": "Succeeded"},
             },
             {"metadata": {"name": "rhods-operator.v1"}, "status": {"phase": "Succeeded"}},
+            {
+                "metadata": {"name": "openshift-pipelines-operator-rh.v1"},
+                "status": {"phase": "Succeeded"},
+            },
         ]
     }
 

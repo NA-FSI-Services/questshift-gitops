@@ -1,0 +1,100 @@
+# Tekton copies Granite 3.2 8B Instruct from the ModelCar OCI catalog onto
+# PVC questshift-llm-cache. S3/MinIO is not used (that would need a Secret).
+# Schedule on the GPU node so the RWO volume lands where vLLM will run.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: questshift-pipeline
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: questshift-install-granite
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  description: Copy ibm-granite/granite-3.2-8b-instruct weights from ModelCar onto the model PVC.
+  workspaces:
+    - name: models
+      description: PVC questshift-llm-cache
+      mountPath: /pvc
+  steps:
+    - name: copy-modelcar
+      image: quay.io/redhat-ai-services/modelcar-catalog:granite-3.2-8b-instruct
+      imagePullPolicy: IfNotPresent
+      computeResources:
+        requests:
+          cpu: 250m
+          memory: 1Gi
+        limits:
+          cpu: "1"
+          memory: 2Gi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      command:
+        - /bin/sh
+        - -c
+        - |
+          set -eu
+          if [ -f /pvc/.questshift-modelcar ] && [ -f /pvc/config.json ]; then
+            echo "ModelCar weights already on PVC"
+            exit 0
+          fi
+          echo "Copying Granite 3.2 8B Instruct from ModelCar /models onto the PVC"
+          if [ -d /pvc/hub ]; then
+            rm -rf /pvc/hub
+          fi
+          cp -R /models/. /pvc/
+          : >/pvc/.questshift-modelcar
+          echo "ModelCar copy complete"
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: questshift-install-granite
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  description: Install Granite 3.2 8B Instruct onto questshift-llm-cache.
+  workspaces:
+    - name: models
+  tasks:
+    - name: copy-modelcar
+      taskRef:
+        name: questshift-install-granite
+      workspaces:
+        - name: models
+          workspace: models
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: questshift-install-granite
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  pipelineRef:
+    name: questshift-install-granite
+  taskRunTemplate:
+    serviceAccountName: questshift-pipeline
+    podTemplate:
+      nodeSelector:
+        feature.node.kubernetes.io/pci-10de.present: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+  workspaces:
+    - name: models
+      persistentVolumeClaim:
+        claimName: questshift-llm-cache
+  timeouts:
+    pipeline: "2h"

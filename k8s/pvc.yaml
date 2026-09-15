@@ -4,6 +4,8 @@ metadata:
   name: questshift-llm-cache
   labels:
     app.kubernetes.io/part-of: questshift
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   accessModes:
     - ReadWriteOnce

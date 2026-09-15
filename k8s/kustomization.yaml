@@ -5,6 +5,7 @@ commonLabels:
   app.kubernetes.io/part-of: questshift
 resources:
   - pvc.yaml
+  - granite-pipeline.yaml
   - configmap.yaml
   - llm-deployment.yaml
   - game-backend-deployment.yaml

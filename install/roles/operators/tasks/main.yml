@@ -46,6 +46,14 @@
           - rhoai-subscription
       when: "'rhods-operator' in cluster_probe.operators_missing"
 
+    - name: Install OpenShift Pipelines
+      include_tasks: apply_operator.yml
+      vars:
+        operator_id: openshift-pipelines-operator-rh
+        subscription_templates:
+          - pipelines-subscription
+      when: "'openshift-pipelines-operator-rh' in cluster_probe.operators_missing"
+
 - name: Wait for required operator CSVs
   command: python3 "{{ playbook_dir }}/scripts/wait_operator.py" "{{ item }}"
   register: wait_csv
@@ -58,6 +66,7 @@
     - gpu-operator-certified
     - openshift-gitops-operator
     - rhods-operator
+    - openshift-pipelines-operator-rh
 
 - name: Ensure Node Feature Discovery instance
   include_tasks: apply_manifest.yml

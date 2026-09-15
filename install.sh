@@ -9,7 +9,6 @@ INSTALL_OPERATORS=false
 CHECK_ONLY=false
 SKIP_DEPLOY=false
 ADD_GPU_NODES=true
-HF_TOKEN=""
 REPO_URL="https://github.com/NA-FSI-Services/questshift-gitops"
 REVISION="main"
 
@@ -25,7 +24,6 @@ Options:
   --install-operators   Install missing operators without prompting
   --check-only          Validate access, hardware, and operators; do not deploy
   --no-add-gpu-nodes    Do not clone a GPU MachineSet when the cluster has no NVIDIA GPU
-  --hf-token TOKEN      Hugging Face token (prefer QUESTSHIFT_HF_TOKEN; argv is visible in ps)
   --repo-url URL        GitOps repo (default: NA-FSI-Services/questshift-gitops)
   --revision REV        Git revision (default: main)
   -h, --help            Show this help
@@ -34,11 +32,12 @@ Prerequisites on this machine: oc, python3, ansible-playbook (ansible-core).
 You must already be logged in as cluster-admin (`oc whoami` must succeed).
 The installer does not accept cluster API URLs or tokens; keep those in a
 local `oc login` / KUBECONFIG and a gitignored `.env`.
-`--install-operators` without QUESTSHIFT_HF_TOKEN installs operators only.
-When the cluster has no NVIDIA GPU, the installer clones a GPU MachineSet
+Granite 3.2 8B Instruct is copied from the Red Hat AI services ModelCar
+catalog by an OpenShift Pipelines (Tekton) PipelineRun onto PVC
+questshift-llm-cache (no Hugging Face token, no MinIO/S3). When the
+cluster has no NVIDIA GPU, the installer clones a GPU MachineSet
 (g6.4xlarge / L4) from the first MachineSet and waits for nvidia.com/gpu.
-Pass --no-add-gpu-nodes to skip that.
-The Hugging Face token is applied as secret questshift-hf and is never committed.
+Pass --no-add-gpu-nodes to skip.
 EOF
 }
 
@@ -48,8 +47,12 @@ while [[ $# -gt 0 ]]; do
     --check-only) CHECK_ONLY=true; shift ;;
     --no-add-gpu-nodes) ADD_GPU_NODES=false; shift ;;
     --hf-token)
-      HF_TOKEN="${2:-}"
-      shift 2
+      echo "Hugging Face tokens are no longer used. Granite weights come from the ModelCar catalog." >&2
+      if [[ $# -ge 2 && "${2}" != --* ]]; then
+        shift 2
+      else
+        shift
+      fi
       ;;
     --repo-url)
       REPO_URL="${2:-}"
@@ -78,17 +81,13 @@ need() {
 
 load_local_env() {
   local env_file="${ROOT}/.env"
-  local saved_hf saved_kube
-  saved_hf="${QUESTSHIFT_HF_TOKEN:-}"
+  local saved_kube
   saved_kube="${KUBECONFIG:-}"
   if [[ -f "${env_file}" ]]; then
     set -a
     # shellcheck disable=SC1090,SC1091
     source "${env_file}"
     set +a
-  fi
-  if [[ -n "${saved_hf}" ]]; then
-    export QUESTSHIFT_HF_TOKEN="${saved_hf}"
   fi
   if [[ -n "${saved_kube}" ]]; then
     export KUBECONFIG="${saved_kube}"
@@ -130,9 +129,6 @@ need oc
 need python3
 need ansible-playbook
 load_local_env
-if [[ -z "${HF_TOKEN}" ]]; then
-  HF_TOKEN="${QUESTSHIFT_HF_TOKEN:-}"
-fi
 chmod +x "${INSTALL}/scripts/"*.py 2>/dev/null || true
 
 echo "==> checking oc login"
@@ -161,26 +157,6 @@ if [[ -n "${MISSING}" && "${INSTALL_OPERATORS}" != true && "${CHECK_ONLY}" != tr
     echo "Non-interactive session. Re-run with --install-operators."
     exit 1
   fi
-fi
-
-if [[ "${CHECK_ONLY}" != true && -z "${HF_TOKEN}" ]]; then
-  if [[ -t 0 ]]; then
-    read -r -s -p "Hugging Face token for ibm-granite/granite-3.2-8b-instruct (input hidden): " HF_TOKEN
-    echo
-  fi
-  if [[ -z "${HF_TOKEN}" ]]; then
-    if [[ "${INSTALL_OPERATORS}" == true ]]; then
-      echo "No Hugging Face token; installing operators only. Re-run with QUESTSHIFT_HF_TOKEN in a gitignored .env to deploy."
-      SKIP_DEPLOY=true
-    else
-      echo "A Hugging Face token is required. Set QUESTSHIFT_HF_TOKEN in a gitignored .env or pass --hf-token." >&2
-      exit 1
-    fi
-  fi
-fi
-
-if [[ -n "${HF_TOKEN}" ]]; then
-  export QUESTSHIFT_HF_TOKEN="${HF_TOKEN}"
 fi
 
 echo "==> running Ansible"

@@ -1,7 +1,6 @@
 # QuestShift cluster installer defaults. Do not put tokens here.
 
 questshift_namespace: questshift
-questshift_hf_secret: questshift-hf
 min_ocp_version: "4.20"
 gitops_repo_url: https://github.com/NA-FSI-Services/questshift-gitops
 gitops_revision: main
@@ -14,10 +13,6 @@ install_missing_operators: false
 check_only: false
 skip_deploy: false
 
-# Hugging Face token comes from the QUESTSHIFT_HF_TOKEN environment variable
-# or a gitignored .env sourced by ./install.sh. Never commit it.
-questshift_hf_token: "{{ lookup('env', 'QUESTSHIFT_HF_TOKEN') | default('', true) }}"
-
 operator_wait_retries: 60
 operator_wait_delay: 20
 gpu_wait_retries: 120
@@ -26,5 +21,7 @@ gpu_wait_delay: 20
 # ./install.sh --no-add-gpu-nodes skips that.
 add_gpu_nodes: true
 gpu_instance_type: "{{ lookup('env', 'QUESTSHIFT_GPU_INSTANCE_TYPE') | default('g6.4xlarge', true) }}"
-app_wait_retries: 90
+app_wait_retries: 180
 app_wait_delay: 20
+pipeline_wait_retries: 180
+pipeline_wait_delay: 20

@@ -1,9 +1,4 @@
 ---
-- name: Hugging Face token is required
-  fail:
-    msg: "Set QUESTSHIFT_HF_TOKEN or pass --hf-token. The value is never written to git."
-  when: questshift_hf_token | length == 0
-
 - name: Ensure work directory exists
   file:
     path: "{{ playbook_dir }}/.work"
@@ -27,15 +22,18 @@
   register: apply_ns
   changed_when: "'created' in apply_ns.stdout or 'configured' in apply_ns.stdout"
 
-- name: Apply Hugging Face secret from the environment (not from git)
-  shell: |
-    oc create secret generic {{ questshift_hf_secret }} \
-      --namespace {{ questshift_namespace }} \
-      --from-literal=token="${QUESTSHIFT_HF_TOKEN}" \
-      --dry-run=client -o yaml | oc apply -f -
-  environment:
-    QUESTSHIFT_HF_TOKEN: "{{ questshift_hf_token }}"
-  no_log: true
+- name: Label namespace for OpenShift GitOps
+  command: >-
+    oc label namespace {{ questshift_namespace }}
+    argocd.argoproj.io/managed-by={{ argocd_namespace }}
+    --overwrite
+  changed_when: true
+
+- name: Remove unused Hugging Face secret if present
+  command: >-
+    oc delete secret questshift-hf
+    --namespace {{ questshift_namespace }}
+    --ignore-not-found
   changed_when: true
 
 - name: Render Argo CD Application
@@ -47,6 +45,14 @@
 - name: Apply Argo CD Application
   command: oc apply -f "{{ playbook_dir }}/.work/application.yaml"
   changed_when: true
+
+- name: Wait for the Granite ModelCar PipelineRun
+  command: python3 "{{ playbook_dir }}/scripts/wait_pipelinerun.py" "{{ questshift_namespace }}" questshift-install-granite
+  register: wait_pipeline
+  until: wait_pipeline.rc == 0
+  retries: "{{ pipeline_wait_retries }}"
+  delay: "{{ pipeline_wait_delay }}"
+  changed_when: false
 
 - name: Wait for QuestShift Application to become Healthy
   command: python3 "{{ playbook_dir }}/scripts/wait_application.py" "{{ argocd_namespace }}" "{{ argocd_application }}"

@@ -18,4 +18,4 @@ Read this repo's `AGENTS.md`, then workflows.
 - Essentials: https://github.com/NA-FSI-Services/questshift/blob/main/docs/ARCHITECTURE-ESSENTIALS.md
   Local: `/Users/dtorresf/Documents/GitHub/na-fsi-services/questshift/questshift/docs/ARCHITECTURE-ESSENTIALS.md`
 
-One OpenShift project is one party. Log in as cluster-admin first; `./install.sh` refuses to run without `oc whoami`. `--no-add-gpu-nodes` skips cloning a GPU MachineSet. vLLM + Granite 3.2 8B Instruct + `nvidia.com/gpu: 1`. No Ollama, no native image, no extra Routes, no command-runner pod. Never commit HF tokens, kubeconfigs, or workshop API URLs; create `questshift-hf` with the installer / `oc create secret`. Quality: `./verify.sh`.
+One OpenShift project is one party. Log in as cluster-admin first; `./install.sh` refuses to run without `oc whoami`. `--no-add-gpu-nodes` skips cloning a GPU MachineSet. vLLM + Granite 3.2 8B Instruct + `nvidia.com/gpu: 1`. Tekton PipelineRun copies ModelCar weights (no HF token, no MinIO). No Ollama, no native image, no extra Routes, no command-runner pod. Never commit kubeconfigs or workshop API URLs. Quality: `./verify.sh`.

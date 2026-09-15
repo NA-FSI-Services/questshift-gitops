@@ -5,6 +5,8 @@ metadata:
   labels:
     app: questshift-llm
     app.kubernetes.io/part-of: questshift
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
 spec:
   replicas: 1
   selector:
@@ -24,6 +26,8 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - --model
+            - /models
+            - --served-model-name
             - ibm-granite/granite-3.2-8b-instruct
             - --host
             - 0.0.0.0
@@ -35,27 +39,43 @@ spec:
             - "0.90"
             - --trust-remote-code
           env:
-            - name: HUGGING_FACE_HUB_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: questshift-hf
-                  key: token
+            - name: HF_HUB_OFFLINE
+              value: "1"
+            - name: TRANSFORMERS_OFFLINE
+              value: "1"
+            # OpenShift restricted SCC: random UID cannot write /.cache.
+            - name: HOME
+              value: /models/.runtime
             - name: HF_HOME
-              value: /models
+              value: /models/.runtime
+            - name: XDG_CACHE_HOME
+              value: /models/.runtime/cache
+            - name: FLASHINFER_WORKSPACE_DIR
+              value: /models/.runtime/flashinfer
+            - name: VLLM_CACHE_ROOT
+              value: /models/.runtime/vllm
+            - name: NUMBA_CACHE_DIR
+              value: /models/.runtime/numba
+            - name: TMPDIR
+              value: /models/.runtime/tmp
           ports:
             - name: http
               containerPort: 8000
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 180
           readinessProbe:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 30
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 120
             periodSeconds: 20
           resources:
             requests:
@@ -66,6 +86,14 @@ spec:
               cpu: "8"
               memory: 24Gi
               nvidia.com/gpu: "1"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
             - name: model-cache
               mountPath: /models

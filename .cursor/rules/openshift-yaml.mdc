@@ -7,9 +7,9 @@ alwaysApply: false
 # OpenShift YAML
 
 - Apply with `./install.sh` (Argo CD Application on `k8s/`). `oc apply -k k8s/` is fallback only. Namespace `questshift`. One party; do not add a session router.
-- `llm-deployment.yaml`: image `vllm/vllm-openai`, model `ibm-granite/granite-3.2-8b-instruct`, `nvidia.com/gpu: "1"`. No Ollama container.
+- `llm-deployment.yaml`: image `vllm/vllm-openai`, served name `ibm-granite/granite-3.2-8b-instruct`, `nvidia.com/gpu: "1"`. Granite install is Tekton `granite-pipeline.yaml` (ModelCar). No Ollama container. No Hugging Face secret. No MinIO.
 - Engine Deployment is JVM. Do not switch to a native image. Mount campaigns ConfigMap read-only.
 - Route targets the UI Service only; nginx already proxies `/api/` and `/ws/`.
-- Keep Hugging Face secret name `questshift-hf`. Create it with `oc create secret`, never a committed `Secret` YAML. Git may only `secretKeyRef` name `questshift-hf` key `token`. No `stringData`, no real tokens, no kubeconfigs.
+- Never add a `Secret` manifest with `stringData` or a real token. No kubeconfigs.
 - Campaign ConfigMap generator file must stay in sync with `questshift-campaigns`.
 - Quality: `./verify.sh` (yamllint, ruff, shellcheck, kustomize, pytest-cov).

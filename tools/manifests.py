@@ -13,7 +13,8 @@ REQUIRED = (
     "ibm-granite/granite-3.2-8b-instruct",
     "vllm",
     "nvidia.com/gpu",
-    "questshift-hf",
+    "modelcar-catalog:granite-3.2-8b-instruct",
+    "kind: Pipeline",
 )
 
 

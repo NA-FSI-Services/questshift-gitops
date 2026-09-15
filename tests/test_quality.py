@@ -20,7 +20,8 @@ CANONICAL_TOKENS = """\
 vllm
 ibm-granite/granite-3.2-8b-instruct
 nvidia.com/gpu: "1"
-questshift-hf
+modelcar-catalog:granite-3.2-8b-instruct
+kind: Pipeline
 """
 
 

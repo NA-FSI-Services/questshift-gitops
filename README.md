@@ -6,19 +6,17 @@ OpenShift manifests for one party: UI, Quarkus engine, and vLLM serving IBM Gran
 
 1. Set up an OpenShift **4.20+** cluster (ephemeral workshop clusters are fine; each install is a different cluster).
 2. Log in as cluster-admin. `./install.sh` refuses to run unless `oc whoami` succeeds and does not accept API URLs or tokens as flags.
-3. Copy `.env.example` to `.env` (gitignored) and set `QUESTSHIFT_HF_TOKEN`.
+3. Optional: copy `.env.example` to `.env` (gitignored) and set `KUBECONFIG`.
 
 ```bash
 oc login --server=https://api.CLUSTER:6443
 oc whoami
-cp .env.example .env   # never commit
 ./install.sh
 ```
 
 Skip the operator prompt and install anything missing:
 
 ```bash
-export QUESTSHIFT_HF_TOKEN=...   # never commit
 ./install.sh --install-operators
 ```
 
@@ -34,17 +32,18 @@ A successful install prints the UI Route (`https://…`) so you can start a camp
 
 Canonical steps: [INSTALL.md](https://github.com/NA-FSI-Services/questshift/blob/main/docs/INSTALL.md) (local `/Users/dtorresf/Documents/GitHub/na-fsi-services/questshift/questshift/docs/INSTALL.md`).
 
-The Hugging Face token is created as secret `questshift-hf` in namespace `questshift`. Do not commit the token, a Secret YAML, a kubeconfig, a CA certificate, or a specific cluster API URL.
+Granite weights are copied from the Red Hat AI services ModelCar catalog by Tekton PipelineRun `questshift-install-granite`. There is no Hugging Face token, no MinIO, and no `questshift-hf` secret. Do not commit a Secret YAML, a kubeconfig, a CA certificate, or a specific cluster API URL.
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
 | [install.sh](install.sh) | Facilitator entrypoint (Ansible). Requires an existing `oc` login. |
-| [.env.example](.env.example) | Placeholder for gitignored `.env` (`QUESTSHIFT_HF_TOKEN`) |
+| [.env.example](.env.example) | Placeholder for gitignored `.env` (`KUBECONFIG` only) |
 | [install/](install/) | Probe, operator roles, GitOps deploy |
 | [argocd/application.yaml](argocd/application.yaml) | Argo CD Application (synced by the installer) |
-| [k8s/llm-deployment.yaml](k8s/llm-deployment.yaml) | vLLM + L4 + PVC |
+| [k8s/llm-deployment.yaml](k8s/llm-deployment.yaml) | vLLM + L4 + PVC (after Tekton copy) |
+| [k8s/granite-pipeline.yaml](k8s/granite-pipeline.yaml) | Tekton Task / Pipeline / PipelineRun (ModelCar → PVC) |
 | [k8s/game-backend-deployment.yaml](k8s/game-backend-deployment.yaml) | Quarkus engine |
 | [k8s/game-ui-deployment.yaml](k8s/game-ui-deployment.yaml) | nginx UI |
 | [k8s/game-service.yaml](k8s/game-service.yaml) | Services |
@@ -52,7 +51,7 @@ The Hugging Face token is created as secret `questshift-hf` in namespace `quests
 | [k8s/configmap.yaml](k8s/configmap.yaml) | LLM URL, model id |
 | [k8s/pvc.yaml](k8s/pvc.yaml) | Model weights |
 
-Images are placeholders (`image-registry.openshift-image-registry.svc:5000/questshift/...`) until CI publishes builds. Emergency fallback: `oc apply -k k8s/` after operators and `questshift-hf` exist.
+Images are placeholders (`image-registry.openshift-image-registry.svc:5000/questshift/...`) until CI publishes builds. Emergency fallback: `oc apply -k k8s/` after operators exist.
 
 ## Quality gates
 
