@@ -10,7 +10,7 @@ FORBIDDEN = (
     "kind: Secret",
 )
 REQUIRED = (
-    "ibm-granite/granite-3.1-8b-instruct",
+    "ibm-granite/granite-3.2-8b-instruct",
     "vllm",
     "nvidia.com/gpu",
     "questshift-hf",

@@ -24,7 +24,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - --model
-            - ibm-granite/granite-3.1-8b-instruct
+            - ibm-granite/granite-3.2-8b-instruct
             - --host
             - 0.0.0.0
             - --port

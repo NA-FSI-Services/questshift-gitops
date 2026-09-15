@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 CANONICAL_TOKENS = """\
 vllm
-ibm-granite/granite-3.1-8b-instruct
+ibm-granite/granite-3.2-8b-instruct
 nvidia.com/gpu: "1"
 questshift-hf
 """

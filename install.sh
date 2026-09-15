@@ -136,7 +136,7 @@ fi
 
 if [[ "${CHECK_ONLY}" != true && -z "${HF_TOKEN}" ]]; then
   if [[ -t 0 ]]; then
-    read -r -s -p "Hugging Face token for ibm-granite/granite-3.1-8b-instruct (input hidden): " HF_TOKEN
+    read -r -s -p "Hugging Face token for ibm-granite/granite-3.2-8b-instruct (input hidden): " HF_TOKEN
     echo
   fi
   if [[ -z "${HF_TOKEN}" ]]; then
