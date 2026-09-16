@@ -64,6 +64,22 @@ rooms:
     forbidden_patterns:
       - "^\\s*cat\\s+/var/log/quest\\.log\\s*$"
     hint: The golem hates cat-only answers. Grep the rune, then awk the last field.
+    clues:
+      - id: shell-log
+        label: scratched plaque
+        text: /var/log/quest.log
+        x: 280
+        y: 220
+      - id: shell-grep
+        label: rusted pipe
+        text: grep -i rune
+        x: 520
+        y: 200
+      - id: shell-awk
+        label: chalk on stone
+        text: "awk '{print $NF}'"
+        x: 640
+        y: 280
     success_narrative: |
       The golem cracks. A shard labeled THORN drops into the party's inventory.
       The first door unseals with a hiss of stdout.
@@ -105,6 +121,22 @@ rooms:
                 dest: /etc/questshift/name
                 content: "{{ inventory_hostname }}\n"
     hint: hosts must be dungeon, gather_facts must be true, and the task must have a name.
+    clues:
+      - id: play-hosts
+        label: inventory ledger
+        text: "hosts: dungeon"
+        x: 260
+        y: 200
+      - id: play-facts
+        label: bound scroll
+        text: "gather_facts: true"
+        x: 480
+        y: 240
+      - id: play-dest
+        label: iron ring
+        text: "dest: /etc/questshift/name"
+        x: 680
+        y: 200
     success_narrative: |
       The playbook binds. Iron rings snap onto the correct inventory.
       A second rune, ASH, lifts from the page.
@@ -141,6 +173,22 @@ rooms:
     forbidden_patterns:
       - "/readyz"
     hint: describe first if you want flavor. The fix is oc set probe ... /healthz in namespace dungeon.
+    clues:
+      - id: pod-name
+        label: cracked helm
+        text: pod/crashing-wizard
+        x: 240
+        y: 240
+      - id: pod-health
+        label: pulse stone
+        text: /healthz
+        x: 500
+        y: 180
+      - id: pod-ns
+        label: dungeon sign
+        text: -n dungeon
+        x: 700
+        y: 260
     success_narrative: |
       The wizard inhales. Restarts fall to zero. Rune OAK rolls from the pod YAML.
     loot:
@@ -188,6 +236,22 @@ rooms:
       - "greeting\\.toUpperCase"
       - "/helo"
     hint: Fix the path, add @Produces TEXT_PLAIN, and return the literal. Do not call methods on a null field.
+    clues:
+      - id: java-path
+        label: carved lintel
+        text: '@Path("/hello")'
+        x: 260
+        y: 180
+      - id: java-produces
+        label: media stamp
+        text: "@Produces(MediaType.TEXT_PLAIN)"
+        x: 500
+        y: 260
+      - id: java-lives
+        label: living rune
+        text: QuestShift lives
+        x: 700
+        y: 200
     success_narrative: |
       The resource answers. 200 OK, text/plain. Rune IRON clinks onto the bench.
     loot:
@@ -221,6 +285,17 @@ rooms:
       - rune-oak
       - rune-iron
     hint: The name is the four runes in room order, joined by hyphens, lower-case.
+    clues:
+      - id: throne-annotate
+        label: throne edict
+        text: oc annotate namespace dungeon
+        x: 280
+        y: 200
+      - id: throne-name
+        label: four-rune tablet
+        text: questshift/name=thorn-ash-oak-iron
+        x: 620
+        y: 240
     success_narrative: |
       The throne accepts the annotation. Routes gleam. The cluster speaks its name:
       thorn-ash-oak-iron. The hour is yours. Export the session and leave a torch for the next party.
