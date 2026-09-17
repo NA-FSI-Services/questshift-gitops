@@ -17,7 +17,7 @@ Install:
 
 ## This repo
 
-One OpenShift project = one party. Facilitators `oc login` as cluster-admin, then run `./install.sh` (Ansible). The script refuses to run without that session, checks hardware, optionally installs GitOps / NFD / NVIDIA GPU / RHOAI / OpenShift Pipelines operators, then syncs `k8s/` with an Argo CD Application.
+One OpenShift project = one stack (one Route). Many in-memory parties share that engine. Facilitators `oc login` as cluster-admin, then run `./install.sh` (Ansible). The script refuses to run without that session, checks hardware, optionally installs GitOps / NFD / NVIDIA GPU / RHOAI / OpenShift Pipelines operators, then syncs `k8s/` with an Argo CD Application.
 
 - LLM Deployment is **vLLM** + `ibm-granite/granite-3.2-8b-instruct` + `nvidia.com/gpu: 1`. No Ollama sidecar. RHOAI is a cluster operator prerequisite, not the Game Master runtime. Granite weights come from ModelCar `quay.io/redhat-ai-services/modelcar-catalog:granite-3.2-8b-instruct` via Tekton PipelineRun `questshift-install-granite` (no Hugging Face token, no MinIO).
 - Engine is JVM (not native). UI is nginx static. Campaign YAML is a ConfigMap.

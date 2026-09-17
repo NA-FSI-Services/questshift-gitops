@@ -1,6 +1,6 @@
 # QuestShift GitOps
 
-OpenShift manifests for one party: UI, Quarkus engine, and vLLM serving IBM Granite 3.2 8B Instruct on a single NVIDIA L4.
+OpenShift manifests for one QuestShift stack: UI, Quarkus engine, and vLLM serving IBM Granite 3.2 8B Instruct on a single NVIDIA L4. The engine holds many in-memory parties behind that Route.
 
 ## Install
 

@@ -7,7 +7,7 @@ Read `AGENTS.md` first (this repo), then the docs-repo map.
 
 ## Hard rules (v1 freeze)
 
-- One party per deployment. No multi-tenant router.
+- One OpenShift stack (one Route). No extra session router.
 - vLLM only, Granite 3.2 8B Instruct, NVIDIA L4 (`nvidia.com/gpu: 1`). No Ollama.
 - Engine JVM, UI nginx. No native image build in this repo.
 - Terminal remains simulated in the engine; these manifests must not add a login node or privileged command runner.
