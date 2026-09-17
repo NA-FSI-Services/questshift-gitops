@@ -46,10 +46,15 @@ rooms:
     mapY: 220
     puzzle_type: linux
     estimatedMinutes: 10
+    guardian:
+      id: shell-golem
+      title: Shell golem
+      sprite: guardian_shell
     narrative: |
-      A shell golem fills the south door. Chests on the floor hold a filesystem
-      tree, a log leaf, and a torn man page. The golem will not yield to a name
-      shouted without proof it lives in its filesystem. Pipe wisely.
+      A shell golem bars the north challenge door. The south door stands open
+      back to the lobby. Chests on the floor hold a filesystem tree, a log leaf,
+      and a torn man page. The golem will not yield to a name shouted without
+      proof it lives in its filesystem. Pipe wisely.
     prompt: |
       The simulated log is /var/log/quest.log. Extract the rune token
       (the last field on the line that contains 'rune', ignoring case).
@@ -111,7 +116,7 @@ rooms:
         y: 260
     success_narrative: |
       The golem cracks. A shard labeled THORN drops into the party's inventory.
-      The first door unseals with a hiss of stdout.
+      The north door unseals with a hiss of stdout.
     loot:
       - id: rune-thorn
         name: Rune of Thorn
@@ -127,9 +132,14 @@ rooms:
     mapY: 140
     puzzle_type: ansible
     estimatedMinutes: 10
+    guardian:
+      id: bound-familiar
+      title: Bound familiar
+      sprite: guardian_playbook
     narrative: |
-      An Automancer's grimoire lies open. The play binds the wrong hosts.
-      Tasks have no names. The dungeon will not apply a nameless task.
+      A bound familiar bars the north challenge door. The south door stands open
+      back to the lobby. An Automancer's grimoire lies open. The play binds the
+      wrong hosts. Tasks have no names. The dungeon will not apply a nameless task.
     prompt: |
       Submit a minimal play that targets hosts: dungeon, gathers facts,
       and has one named task that writes /etc/questshift/name using copy or template.
@@ -167,8 +177,8 @@ rooms:
         x: 680
         y: 200
     success_narrative: |
-      The playbook binds. Iron rings snap onto the correct inventory.
-      A second rune, ASH, lifts from the page.
+      The familiar unbinds. Iron rings snap onto the correct inventory.
+      A second rune, ASH, lifts from the page. The north door unseals.
     loot:
       - id: rune-ash
         name: Rune of Ash
@@ -184,8 +194,13 @@ rooms:
     mapY: 180
     puzzle_type: openshift
     estimatedMinutes: 12
+    guardian:
+      id: crashing-wizard-ghost
+      title: Crashing-wizard ghost
+      sprite: guardian_pod
     narrative: |
-      In a side chapel, a Pod named crashing-wizard restarts forever.
+      The ghost of crashing-wizard bars the north challenge door. The south door
+      stands open back to the lobby. In this side chapel the Pod restarts forever.
       The liveness probe pokes /readyz on a process that only serves /healthz.
       Rangers read describe and logs. Then they patch the probe.
     prompt: |
@@ -219,7 +234,8 @@ rooms:
         x: 700
         y: 260
     success_narrative: |
-      The wizard inhales. Restarts fall to zero. Rune OAK rolls from the pod YAML.
+      The ghost inhales. Restarts fall to zero. Rune OAK rolls from the pod YAML.
+      The north door unseals.
     loot:
       - id: rune-oak
         name: Rune of Oak
@@ -235,9 +251,15 @@ rooms:
     mapY: 260
     puzzle_type: java
     estimatedMinutes: 10
+    guardian:
+      id: servlet-slime
+      title: Cursed servlet-slime
+      sprite: guardian_servlet
     narrative: |
-      The Artificer's workbench holds a Quarkus resource that returns 500s.
-      A null greeting, a missing Path, a forgotten Produces. Repair the snippet.
+      A cursed servlet-slime bars the north challenge door. The south door stands
+      open back to the lobby. The Artificer's workbench holds a Quarkus resource
+      that returns 500s. A null greeting, a missing Path, a forgotten Produces.
+      Repair the snippet.
     prompt: |
       Submit a Java 21 snippet for a GET /hello resource that returns text/plain
       "QuestShift lives" and never dereferences a null greeting.
@@ -282,7 +304,8 @@ rooms:
         x: 700
         y: 200
     success_narrative: |
-      The resource answers. 200 OK, text/plain. Rune IRON clinks onto the bench.
+      The slime stills. The resource answers. 200 OK, text/plain. Rune IRON clinks
+      onto the bench. The north door unseals.
     loot:
       - id: rune-iron
         name: Rune of Iron
@@ -298,9 +321,15 @@ rooms:
     mapY: 160
     puzzle_type: openshift
     estimatedMinutes: 8
+    guardian:
+      id: nameless-wraith
+      title: Nameless wraith
+      sprite: guardian_throne
     narrative: |
-      Four runes. One throne. The cluster will remember its name when you label
-      the namespace with every rune and annotate it questshift/name=thorn-ash-oak-iron.
+      A nameless wraith bars the north challenge door. The south door stands open
+      back to the lobby. Four runes. One throne. The cluster will remember its name
+      when you label the namespace with every rune and annotate it
+      questshift/name=thorn-ash-oak-iron.
     prompt: |
       Submit a single oc command that annotates namespace dungeon with
       questshift/name=thorn-ash-oak-iron. You must already hold all four runes
@@ -326,8 +355,9 @@ rooms:
         x: 620
         y: 240
     success_narrative: |
-      The throne accepts the annotation. Routes gleam. The cluster speaks its name:
-      thorn-ash-oak-iron. The hour is yours. Export the session and leave a torch for the next party.
+      The wraith bows and fades. The north door unseals. The throne accepts the
+      annotation. Routes gleam. The cluster speaks its name: thorn-ash-oak-iron.
+      The hour is yours. Export the session and leave a torch for the next party.
     loot:
       - id: cluster-name
         name: The Remembered Name
