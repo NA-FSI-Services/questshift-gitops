@@ -47,12 +47,13 @@ rooms:
     puzzle_type: linux
     estimatedMinutes: 10
     narrative: |
-      A shell golem blocks the gate. Its chest is a log file that never ends.
-      Somewhere in the noise is a rune: the first syllable of the cluster's name.
-      Pipe wisely. The golem only yields to a pipeline, not a single command.
+      A shell golem fills the south door. Chests on the floor hold a filesystem
+      tree, a log leaf, and a torn man page. The golem will not yield to a name
+      shouted without proof it lives in its filesystem. Pipe wisely.
     prompt: |
       The simulated log is /var/log/quest.log. Extract the rune token
       (the last field on the line that contains 'rune', ignoring case).
+      A name by itself is not evidence. A grep without awk is too much line.
     sample_output: |
       12:01:02 INFO dungeon boot
       12:01:03 WARN goblin chatter rune=THORN
@@ -64,22 +65,50 @@ rooms:
     forbidden_patterns:
       - "^\\s*cat\\s+/var/log/quest\\.log\\s*$"
     hint: The golem hates cat-only answers. Grep the rune, then awk the last field.
+    miss_beats:
+      - pattern: "(?i)^\\s*(thorn|rune=thorn|thorn-ash-oak-iron)\\s*$"
+        message: >
+          The golem rumbles. A name shouted into the dark is not evidence
+          it lives in my filesystem. Show the path.
+      - pattern: "(?s)^(?!.*awk).*grep.*rune.*"
+        message: >
+          The golem squints at the whole line. The resolved name is too long.
+          Only part of that line is relevant.
     clues:
+      - id: shell-tree
+        label: carved directory tree
+        text: |
+          /
+          ├── etc
+          ├── home
+          └── var
+              └── log
+                  ├── boot.log
+                  └── quest.log
+        x: 260
+        y: 200
       - id: shell-log
-        label: scratched plaque
-        text: /var/log/quest.log
-        x: 280
-        y: 220
-      - id: shell-grep
-        label: rusted pipe
-        text: grep -i rune
+        label: weathered log leaf
+        text: |
+          /var/log/quest.log
+          12:01:02 INFO dungeon boot
+          12:01:03 WARN goblin chatter rune=THORN
+          12:01:04 INFO pods dreaming
         x: 520
         y: 200
-      - id: shell-awk
-        label: chalk on stone
-        text: "awk '{print $NF}'"
-        x: 640
-        y: 280
+      - id: shell-man
+        label: torn man page
+        text: |
+          GREP(1)
+            grep -i PATTERN FILE
+            Print lines matching PATTERN, ignoring case.
+
+          AWK(1)
+            awk '{print $NF}'
+            $NF is the last field of the line.
+            A matching line can be longer than the token you need.
+        x: 680
+        y: 260
     success_narrative: |
       The golem cracks. A shard labeled THORN drops into the party's inventory.
       The first door unseals with a hiss of stdout.
