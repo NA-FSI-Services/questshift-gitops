@@ -32,6 +32,29 @@ story:
   opening: |
     Torchlight on brushed metal. The Game Master leans on a cracked Route.
     "Sixty minutes. Five rooms. The cluster forgot its name. You will remind it."
+  clues:
+    - id: lobby-hour
+      label: hourglass plaque
+      text: |
+        Sixty minutes. Five rooms. Seats are costume — anyone may solve
+        any puzzle when they hold the Game Master floor. Walking is free.
+      x: 80
+      y: 380
+    - id: lobby-gates
+      label: cracked Route sign
+      text: |
+        Wooden gates mark the rooms. The glowing gate is the puzzle the
+        party is scoring. Future gates stay locked. The south door in a
+        room always returns here.
+      x: 360
+      y: 360
+    - id: lobby-premise
+      label: nameless cluster tablet
+      text: |
+        The workshop cluster woke up unnamed. Labels fell off. Pods loop.
+        Restore the name, or the hour is lost.
+      x: 700
+      y: 380
   winCondition: |
     Complete all five rooms. The Operator's Throne accepts the restored cluster name
     and the party exports their session YAML as proof of the run.
