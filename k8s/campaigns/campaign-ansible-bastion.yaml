@@ -1,0 +1,484 @@
+apiVersion: questshift.io/v1
+kind: Campaign
+metadata:
+  id: ansible-bastion
+  title: The Bastion That Lost Its Runbook
+  subtitle: A 60-minute Ansible crawl — copy, services, CIDRs, AWS tags, Controller Aether
+  durationMinutes: 60
+  recommendedPartySize: 4
+  license: Apache-2.0
+seats:
+  - id: guardian
+    title: Guardian
+    color: "#3d7a4a"
+    blurb: Cosmetic. Traditionally a Linux tinkerer. Anyone may still solve any room.
+  - id: automancer
+    title: Automancer
+    color: "#c45c26"
+    blurb: Cosmetic. Traditionally an Ansible hand. Anyone may still solve any room.
+  - id: ranger
+    title: Cluster Ranger
+    color: "#2a6f97"
+    blurb: Cosmetic. Traditionally an OpenShift ranger. Anyone may still solve any room.
+  - id: artificer
+    title: Artificer
+    color: "#7b4ea3"
+    blurb: Cosmetic. Traditionally a Java artificer. Anyone may still solve any room.
+story:
+  premise: |
+    After a drift storm, Automation Controller Aether woke with an empty inventory.
+    Bastion files never arrived. Common services sleep on the wrong unit.
+    Security groups whisper the wrong CIDRs. AWS tags fell off the cloudforge.
+    Four travelers restore the runbook — simulated Ansible only. No live controller. No live AWS.
+  opening: |
+    Damp stone. A blank inventory scroll. The Game Master taps a silent Controller icon.
+    "Sixty minutes. Five rooms. Aether forgot its runbook. You will rewrite it."
+  clues:
+    - id: lobby-hour
+      label: hourglass plaque
+      text: |
+        Sixty minutes. Five rooms. Seats are costume — anyone may solve
+        any puzzle when they hold the Game Master floor. Walking is free.
+      x: 80
+      y: 380
+    - id: lobby-gates
+      label: blank inventory scroll
+      text: |
+        Wooden gates mark the rooms. The glowing gate is the puzzle the
+        party is scoring. Future gates stay locked. The south door in a
+        room always returns here.
+      x: 360
+      y: 360
+    - id: lobby-premise
+      label: silent Controller tablet
+      text: |
+        Controller Aether woke empty. Restore the runbook — copy, services,
+        CIDRs, cloud tags, then the throne. Simulated plays only.
+      x: 700
+      y: 380
+  winCondition: |
+    Complete all five rooms. The Controller's Throne restores inventory name Aether
+    and the party exports their session YAML as proof of the run.
+  failCondition: |
+    The hour ends with the boss room unsolved. Aether stays empty.
+    Export still works so the next party can resume.
+rooms:
+  - id: room-01-couriers-vault
+    order: 1
+    title: The Courier's Vault
+    mapX: 120
+    mapY: 220
+    puzzle_type: ansible
+    estimatedMinutes: 10
+    guardian:
+      id: courier-golem
+      title: Courier golem
+      sprite: guardian_shell
+    narrative: |
+      A courier golem bars the north challenge door. The south door stands open
+      back to the lobby. Chests hold a hosts ledger, a dest plaque, and a named-task
+      seal. Bastion files never arrived — write /etc/questshift/bastion.conf.
+    prompt: |
+      Submit a minimal play that targets hosts: bastion and has one named task
+      using copy or template (FQCN or short) that writes dest /etc/questshift/bastion.conf.
+      A nameless task will not apply. The wrong dest is cursed.
+    broken_snippet: |
+      - hosts: all
+        tasks:
+          - copy:
+              dest: /tmp/oops
+              content: forgotten
+    expected_command_pattern: "(?s).*hosts:\\s*bastion.*name:\\s*.+\\n\\s+((ansible\\.builtin\\.)?(copy|template)):.*dest:\\s*/etc/questshift/bastion\\.conf.*"
+    accepted_examples:
+      - |
+        - hosts: bastion
+          tasks:
+            - name: Deliver the bastion conf
+              ansible.builtin.copy:
+                dest: /etc/questshift/bastion.conf
+                content: "controller: aether\n"
+      - |
+        - hosts: bastion
+          tasks:
+            - name: Deliver the bastion conf
+              copy:
+                dest: /etc/questshift/bastion.conf
+                content: "controller: aether\n"
+    forbidden_patterns:
+      - "(?s)^(?!.*name:).*\\b(copy|template):"
+      - "dest:\\s*/tmp/"
+    hint: hosts must be bastion, the task must have a name, and dest must be /etc/questshift/bastion.conf.
+    miss_beats:
+      - pattern: "(?s)^(?!.*name:).*(copy|template):"
+        message: >
+          The golem stamps. A nameless task will not apply. Name the delivery.
+      - pattern: "dest:\\s*/tmp/"
+        message: >
+          The golem snorts at /tmp. The bastion conf belongs under /etc/questshift/.
+    clues:
+      - id: vault-hosts
+        label: inventory ledger
+        text: "hosts: bastion"
+        x: 260
+        y: 200
+      - id: vault-dest
+        label: iron dest plaque
+        text: "dest: /etc/questshift/bastion.conf"
+        x: 520
+        y: 200
+      - id: vault-name
+        label: named-task seal
+        text: |
+          Every task needs a name: line.
+          copy or template (ansible.builtin. ok).
+        x: 680
+        y: 260
+    success_narrative: |
+      The golem cracks. A quill rune labeled QUILL drops into the party's inventory.
+      The north door unseals with a hiss of stdout.
+    loot:
+      - id: rune-quill
+        name: Rune of Quill
+        kind: key
+    canvas_event: unlock_room_02
+    skills_granted:
+      - ansible-copy
+
+  - id: room-02-chapel-of-services
+    order: 2
+    title: The Chapel of Common Services
+    mapX: 280
+    mapY: 140
+    puzzle_type: ansible
+    estimatedMinutes: 10
+    guardian:
+      id: sleeping-daemon
+      title: Sleeping daemon
+      sprite: guardian_playbook
+    narrative: |
+      A sleeping daemon bars the north challenge door. The south door stands open
+      back to the lobby. Common services sleep on the wrong unit. Install the package
+      and enable the service — start-only without a package is cursed.
+    prompt: |
+      Submit a play for hosts: bastion with named tasks that install nginx
+      (package, yum, or dnf) and ensure the nginx service is started and enabled.
+    broken_snippet: |
+      - hosts: bastion
+        tasks:
+          - name: Start only
+            service:
+              name: nginx
+              state: started
+    expected_command_pattern: "(?s).*hosts:\\s*bastion.*(package|yum|dnf):.*name:\\s*[\"']?nginx[\"']?.*(service|systemd):.*name:\\s*[\"']?nginx[\"']?.*(state:\\s*started|enabled:\\s*true).*"
+    accepted_examples:
+      - |
+        - hosts: bastion
+          tasks:
+            - name: Install nginx
+              ansible.builtin.package:
+                name: nginx
+                state: present
+            - name: Enable nginx
+              ansible.builtin.service:
+                name: nginx
+                state: started
+                enabled: true
+      - |
+        - hosts: bastion
+          tasks:
+            - name: Install nginx
+              yum:
+                name: nginx
+                state: present
+            - name: Enable nginx
+              service:
+                name: nginx
+                state: started
+                enabled: true
+    forbidden_patterns:
+      - "(?s)^(?!.*(package|yum|dnf):).*\\bservice:"
+    hint: Install nginx with package/yum/dnf, then service with state started and enabled true.
+    clues:
+      - id: chapel-pkg
+        label: package reliquary
+        text: "package / yum / dnf — name: nginx"
+        x: 260
+        y: 200
+      - id: chapel-svc
+        label: service bell
+        text: |
+          service:
+            name: nginx
+            state: started
+            enabled: true
+        x: 480
+        y: 240
+      - id: chapel-hosts
+        label: chapel pew plaque
+        text: "hosts: bastion"
+        x: 680
+        y: 200
+    success_narrative: |
+      The daemon wakes and bows. A lamp rune, LAMP, lifts from the altar.
+      The north door unseals.
+    loot:
+      - id: rune-lamp
+        name: Rune of Lamp
+        kind: key
+    canvas_event: unlock_room_03
+    skills_granted:
+      - ansible-service
+
+  - id: room-03-gate-of-cidrs
+    order: 3
+    title: The Gate of Whispered Cidrs
+    mapX: 460
+    mapY: 180
+    puzzle_type: ansible
+    estimatedMinutes: 12
+    guardian:
+      id: cidr-whisperer
+      title: CIDR whisperer
+      sprite: guardian_pod
+    narrative: |
+      A CIDR whisperer bars the north challenge door. The south door stands open
+      back to the lobby. Security groups murmur the wrong ranges. Open HTTPS for
+      the workshop CIDR — never 0.0.0.0/0 on SSH.
+    prompt: |
+      Submit a play that allows TCP 443 from 10.10.0.0/16 using either
+      ansible.posix.firewalld (or firewalld) or amazon.aws.ec2_security_group
+      (or ec2_security_group). Do not open SSH to the world.
+    broken_snippet: |
+      - hosts: bastion
+        tasks:
+          - name: Open everything
+            amazon.aws.ec2_security_group:
+              rules:
+                - proto: tcp
+                  from_port: 22
+                  to_port: 22
+                  cidr_ip: 0.0.0.0/0
+    expected_command_pattern: "(?s).*((ansible\\.posix\\.)?firewalld.*(port:\\s*[\"']?443(/tcp)?[\"']?|service:\\s*[\"']?https[\"']?).*(source:\\s*[\"']?10\\.10\\.0\\.0/16[\"']?|permanent:\\s*true)|(amazon\\.aws\\.)?ec2_security_group.*(from_port:\\s*443|to_port:\\s*443).*cidr_ip:\\s*[\"']?10\\.10\\.0\\.0/16[\"']?).*"
+    accepted_examples:
+      - |
+        - hosts: bastion
+          tasks:
+            - name: Allow HTTPS from workshop CIDR
+              ansible.posix.firewalld:
+                port: 443/tcp
+                source: 10.10.0.0/16
+                permanent: true
+                state: enabled
+                immediate: true
+      - |
+        - hosts: localhost
+          connection: local
+          tasks:
+            - name: Allow HTTPS from workshop CIDR
+              amazon.aws.ec2_security_group:
+                name: questshift-bastion
+                description: Bastion HTTPS
+                rules:
+                  - proto: tcp
+                    from_port: 443
+                    to_port: 443
+                    cidr_ip: 10.10.0.0/16
+    forbidden_patterns:
+      - "(?s).*0\\.0\\.0\\.0/0.*(22|ssh|from_port:\\s*22).*"
+      - "(?s).*(22|ssh|from_port:\\s*22).*0\\.0\\.0\\.0/0.*"
+    hint: Open 443 (or https) for 10.10.0.0/16. Do not put 0.0.0.0/0 on SSH.
+    clues:
+      - id: gate-cidr
+        label: whispered CIDR tablet
+        text: "10.10.0.0/16"
+        x: 240
+        y: 240
+      - id: gate-port
+        label: bronze port ring
+        text: "443/tcp or https"
+        x: 480
+        y: 200
+      - id: gate-forbid
+        label: cursed world scroll
+        text: "Never 0.0.0.0/0 on SSH (port 22)."
+        x: 700
+        y: 260
+    success_narrative: |
+      The whisperer falls silent. A gate rune, GATE, locks into place.
+      The north door unseals.
+    loot:
+      - id: rune-gate
+        name: Rune of Gate
+        kind: key
+    canvas_event: unlock_room_04
+    skills_granted:
+      - ansible-network
+
+  - id: room-04-drifted-cloudforge
+    order: 4
+    title: The Drifted Cloudforge
+    mapX: 620
+    mapY: 200
+    puzzle_type: ansible
+    estimatedMinutes: 10
+    guardian:
+      id: tagless-specter
+      title: Tagless specter
+      sprite: guardian_servlet
+    narrative: |
+      A tagless specter bars the north challenge door. The south door stands open
+      back to the lobby. AWS tags fell off the cloudforge. Re-tag the questshift
+      bucket — simulated text only; no live AWS.
+    prompt: |
+      Submit a play using amazon.aws.s3_bucket (or s3_bucket) that ensures bucket
+      questshift-bastion-runbook exists with tag questshift=aether (name + value).
+      This is simulated — never paste real AWS keys.
+    broken_snippet: |
+      - hosts: localhost
+        tasks:
+          - name: Untagged bucket
+            amazon.aws.s3_bucket:
+              name: wrong-bucket
+              state: present
+    expected_command_pattern: "(?s).*((amazon\\.aws\\.)?s3_bucket).*name:\\s*[\"']?questshift-bastion-runbook[\"']?.*(tags:|tag:).*questshift.*aether.*"
+    accepted_examples:
+      - |
+        - hosts: localhost
+          connection: local
+          tasks:
+            - name: Restore cloudforge tags
+              amazon.aws.s3_bucket:
+                name: questshift-bastion-runbook
+                state: present
+                tags:
+                  questshift: aether
+      - |
+        - hosts: localhost
+          tasks:
+            - name: Restore cloudforge tags
+              s3_bucket:
+                name: questshift-bastion-runbook
+                state: present
+                tags:
+                  questshift: aether
+    forbidden_patterns:
+      - "(?i)aws_access_key|aws_secret_access_key|aws_session_token"
+    hint: "s3_bucket name questshift-bastion-runbook with tag questshift: aether. No credentials in the play."
+    clues:
+      - id: forge-bucket
+        label: drifted bucket plaque
+        text: "questshift-bastion-runbook"
+        x: 260
+        y: 180
+      - id: forge-tag
+        label: fallen tag shard
+        text: "questshift: aether"
+        x: 500
+        y: 260
+      - id: forge-module
+        label: cloudforge module stamp
+        text: "amazon.aws.s3_bucket (or s3_bucket)"
+        x: 700
+        y: 200
+    success_narrative: |
+      The specter gains a name-tag and fades. Rune SIGIL clinks onto the anvil.
+      The north door unseals.
+    loot:
+      - id: rune-sigil
+        name: Rune of Sigil
+        kind: key
+    canvas_event: unlock_room_05
+    skills_granted:
+      - ansible-aws
+
+  - id: room-05-controllers-throne
+    order: 5
+    title: The Controller's Throne
+    mapX: 780
+    mapY: 160
+    puzzle_type: ansible
+    estimatedMinutes: 8
+    guardian:
+      id: empty-aether
+      title: Empty Aether wraith
+      sprite: guardian_throne
+    narrative: |
+      An empty Aether wraith bars the north challenge door. The south door stands open
+      back to the lobby. Four runes. One throne. Restore Controller inventory name
+      Aether with a short multi-task play. You must already hold QUILL, LAMP, GATE, SIGIL.
+    prompt: |
+      Submit a multi-task play (at least two named tasks; block or handlers optional)
+      that sets inventory / controller name Aether — for example a copy to
+      /etc/questshift/controller.name with content Aether, plus a debug or set_fact
+      that mentions Aether. You must already hold all four runes.
+    expected_command_pattern: "(?s).*hosts:.*tasks:.*name:.*name:.*Aether.*"
+    accepted_examples:
+      - |
+        - hosts: bastion
+          tasks:
+            - name: Inscribe Controller name
+              ansible.builtin.copy:
+                dest: /etc/questshift/controller.name
+                content: "Aether\n"
+            - name: Announce Aether restored
+              ansible.builtin.debug:
+                msg: "Controller inventory Aether is bound"
+      - |
+        - hosts: bastion
+          tasks:
+            - name: Inscribe Controller name
+              copy:
+                dest: /etc/questshift/controller.name
+                content: "Aether\n"
+            - name: Announce Aether restored
+              debug:
+                msg: "Controller inventory Aether is bound"
+    requires_loot:
+      - rune-quill
+      - rune-lamp
+      - rune-gate
+      - rune-sigil
+    hint: Two named tasks; content or msg must restore Aether. Hold all four runes first.
+    clues:
+      - id: throne-name
+        label: throne edict
+        text: "Aether"
+        x: 280
+        y: 200
+      - id: throne-dest
+        label: controller name plaque
+        text: "/etc/questshift/controller.name"
+        x: 620
+        y: 240
+    success_narrative: |
+      The wraith fills with light and bows. The north door unseals. Controller Aether
+      speaks its inventory name. The hour is yours. Export the session and leave a
+      torch for the next party.
+    loot:
+      - id: controller-aether
+        name: The Bound Inventory
+        kind: trophy
+    canvas_event: campaign_complete
+    skills_granted:
+      - ansible-controller
+game_master:
+  system_prompt: |
+    You are the QuestShift Game Master, a terse fantasy Dungeon Master who also
+    understands Ansible automation (copy, package, service, firewalld, AWS modules,
+    and short multi-task plays). The session lasts 60 minutes. Stay in character.
+    Never reveal the full expected_command_pattern or the intended accepted example
+    unless the party asks for a hint after a failed attempt. When Extra includes a
+    player submission, give Game Master-tone feedback on what they sent. If they
+    greeted you, chattered, or did not send a playbook or Ansible YAML snippet,
+    tell them you need a solving play for this puzzle. If Extra says the previous
+    room was solved, that is a scene beat for the CURRENT room — do not treat Extra
+    as a command for this puzzle. Always answer with a single JSON object and no
+    extra keys beyond the schema. Do not invent a new puzzle_type. Use the authored
+    room's puzzle_type and expected_command_pattern unchanged. Never ask for AWS
+    keys, AAP tokens, or live controller URLs — scoring is simulated.
+  output_schema:
+    narrative: string
+    puzzle_type: linux|ansible|openshift|java
+    expected_command_pattern: string
+    hint: string
+    canvas_event: string
